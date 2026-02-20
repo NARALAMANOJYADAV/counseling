@@ -46,34 +46,28 @@
                             <th>Final Status</th>
                             <td>
                                 <span class="status-badge {{ student.approval_status|lower }}">{{
-                                    student.approval_status
-                                    }}</span>
+                                    student.approval_status }}</span>
                             </td>
                         </tr>
-                        <!-- Mocking hierarchy based on single status as per requested design logic -->
                         <tr>
                             <th>Counselor Approval</th>
-                            <td><span class="status-badge {{ student.approval_status|lower }}">{{
-                                    student.approval_status
+                            <td><span class="status-badge {{ student.counselor_approval|lower }}">{{
+                                    student.counselor_approval }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>HOD Approval</th>
+                            <td><span class="status-badge {{ student.hod_approval|lower }}">{{ student.hod_approval
                                     }}</span></td>
                         </tr>
                         <tr>
                             <th>Incharge Approval</th>
-                            <td><span class="status-badge {{ student.approval_status|lower }}">{{
-                                    student.approval_status
-                                    }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>HOD Approval</th>
-                            <td><span class="status-badge {{ student.approval_status|lower }}">{{
-                                    student.approval_status
-                                    }}</span></td>
+                            <td><span class="status-badge {{ student.incharge_approval|lower }}">{{
+                                    student.incharge_approval }}</span></td>
                         </tr>
                         <tr>
                             <th>Director Approval</th>
-                            <td><span class="status-badge {{ student.approval_status|lower }}">{{
-                                    student.approval_status
-                                    }}</span></td>
+                            <td><span class="status-badge {{ student.director_approval|lower }}">{{
+                                    student.director_approval }}</span></td>
                         </tr>
                     </table>
                 </div>
@@ -98,6 +92,22 @@
         </div>
 
     </main>
+    <script>
+        // Auto-refresh if status is Pending
+        const statusElements = document.querySelectorAll('.status-badge');
+        let isPending = false;
+        statusElements.forEach(el => {
+            if (el.textContent.trim().toLowerCase() === 'pending') {
+                isPending = true;
+            }
+        });
+
+        if (isPending) {
+            setTimeout(() => {
+                window.location.reload();
+            }, 10000); // 10 seconds
+        }
+    </script>
 </body>
 
 </html>

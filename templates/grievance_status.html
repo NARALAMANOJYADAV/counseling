@@ -28,12 +28,48 @@
             {% if grievances %}
             {% for g in grievances %}
             <div class="grievance-card">
-                <span class="status-badge status-{{ g.status|lower|cut:' ' }}">{{ g.status }}</span>
+                <span class="status-badge {{ g.status|lower|cut:' ' }}">{{ g.status }}</span>
                 <h3>{{ g.get_grievance_type_display }}</h3>
                 <p class="meta">Submitted on: {{ g.submission_date|date:"M d, Y" }} | Incident: {{ g.incident_date }}
                 </p>
 
                 <p><strong>Description:</strong><br>{{ g.description }}</p>
+
+                <!-- Approval Workflow Breakdown -->
+                <table class="approval-table"
+                    style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px;">
+                    <tr>
+                        <th
+                            style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; width: 40%;">
+                            Counselor Approval</th>
+                        <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
+                                class="status-badge {{ g.counselor_approval|lower }}">{{ g.counselor_approval }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th
+                            style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
+                            HOD Approval</th>
+                        <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
+                                class="status-badge {{ g.hod_approval|lower }}">{{ g.hod_approval }}</span></td>
+                    </tr>
+                    <tr>
+                        <th
+                            style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
+                            Incharge Approval</th>
+                        <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
+                                class="status-badge {{ g.incharge_approval|lower }}">{{ g.incharge_approval }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th
+                            style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
+                            Director Approval</th>
+                        <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
+                                class="status-badge {{ g.director_approval|lower }}">{{ g.director_approval }}</span>
+                        </td>
+                    </tr>
+                </table>
 
                 {% if g.reply %}
                 <div class="reply-box">
@@ -49,7 +85,22 @@
         </div>
 
     </div>
-    </div>
+    <script>
+        // Auto-refresh if any status is Pending
+        const statusBadges = document.querySelectorAll('.status-badge');
+        let hasPending = false;
+        statusBadges.forEach(badge => {
+            if (badge.textContent.trim().toLowerCase() === 'pending') {
+                hasPending = true;
+            }
+        });
+
+        if (hasPending) {
+            setTimeout(() => {
+                window.location.reload();
+            }, 10000); // 10 seconds
+        }
+    </script>
 </body>
 
 </html>
