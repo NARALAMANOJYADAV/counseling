@@ -135,7 +135,7 @@
 
             return (
                 <div className="dashboard-layout">
-                    <aside className="sidebar" style={{ background: '#020617' }}>
+                    <aside className="sidebar">
                         <div className="logo">
                             <box-icon name='shield-quarter' type='solid' color='#818cf8'></box-icon>
                             <span>ADMIN PANEL</span>
@@ -155,7 +155,7 @@
                                 </a>
                             </div>
 
-                            <div className="nav-item" style={{ marginTop: 'auto' }}>
+                            <div className="nav-item logout-item">
                                 <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
                                     <box-icon name='log-out' color="#ef4444"></box-icon>
                                     <span>Exit Portal</span>
@@ -228,7 +228,7 @@
                                 Recent Submissions
                             </h2>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+                            <div className="submission-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
                                 <div className="submission-box" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px' }}>
                                     <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Counseling Forms</h3>
                                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
