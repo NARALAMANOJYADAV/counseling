@@ -105,9 +105,10 @@
         } else if (role === 'INCHARGE') {
             counselFilter = "?incharge_approval__exact=Pending";
             grievanceFilter = "?incharge_approval__exact=Pending";
-        } else if (role === 'DIRECTOR') {
-            counselFilter = "?director_approval__exact=Pending";
-            grievanceFilter = "?director_approval__exact=Pending";
+        } else {
+            // Default for Superadmin or others
+            counselFilter = "?approval_status__exact=Pending";
+            grievanceFilter = "?status__exact=Pending";
         }
 
         window.URLS = {
@@ -116,6 +117,9 @@
             'users': "/admin/auth/user/",
             'logout': "{% url 'logout' %}"
         };
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => window.location.reload(), 30000);
     </script>
 
     {% verbatim %}
@@ -172,15 +176,17 @@
                         </header>
 
                         <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-                            <div className="stat-card">
+                            <div className="stat-card" onClick={() => window.location.href = window.URLS['users']} style={{ cursor: 'pointer' }}>
                                 <div className="card-title">Total Students</div>
                                 <div className="card-value" style={{ color: '#6366f1' }}>{window.STATS.total_students}</div>
                             </div>
-                            <div className={`stat-card ${window.STATS.pending_counseling > 0 ? 'active-glow' : ''}`}>
+                            <div className={`stat-card ${window.STATS.pending_counseling > 0 ? 'active-glow' : ''}`}
+                                onClick={() => window.location.href = window.URLS['counseling']} style={{ cursor: 'pointer' }}>
                                 <div className="card-title">Pending Counseling</div>
                                 <div className="card-value" style={{ color: '#f59e0b' }}>{window.STATS.pending_counseling}</div>
                             </div>
-                            <div className={`stat-card ${window.STATS.pending_grievances > 0 ? 'active-glow' : ''}`}>
+                            <div className={`stat-card ${window.STATS.pending_grievances > 0 ? 'active-glow' : ''}`}
+                                onClick={() => window.location.href = window.URLS['grievance']} style={{ cursor: 'pointer' }}>
                                 <div className="card-title">Pending Grievances</div>
                                 <div className="card-value" style={{ color: '#ef4444' }}>{window.STATS.pending_grievances}</div>
                             </div>

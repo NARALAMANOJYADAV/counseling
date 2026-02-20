@@ -43,7 +43,8 @@
                             style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; width: 40%;">
                             Counselor Approval</th>
                         <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
-                                class="status-badge {{ g.counselor_approval|lower }}">{{ g.counselor_approval }}</span>
+                                class="status-badge status-{{ g.counselor_approval|lower }}">{{ g.counselor_approval
+                                }}</span>
                         </td>
                     </tr>
                     <tr>
@@ -51,14 +52,15 @@
                             style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
                             HOD Approval</th>
                         <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
-                                class="status-badge {{ g.hod_approval|lower }}">{{ g.hod_approval }}</span></td>
+                                class="status-badge status-{{ g.hod_approval|lower }}">{{ g.hod_approval }}</span></td>
                     </tr>
                     <tr>
                         <th
                             style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
                             Incharge Approval</th>
                         <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
-                                class="status-badge {{ g.incharge_approval|lower }}">{{ g.incharge_approval }}</span>
+                                class="status-badge status-{{ g.incharge_approval|lower }}">{{ g.incharge_approval
+                                }}</span>
                         </td>
                     </tr>
                     <tr>
@@ -66,7 +68,8 @@
                             style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
                             Director Approval</th>
                         <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
-                                class="status-badge {{ g.director_approval|lower }}">{{ g.director_approval }}</span>
+                                class="status-badge status-{{ g.director_approval|lower }}">{{ g.director_approval
+                                }}</span>
                         </td>
                     </tr>
                 </table>

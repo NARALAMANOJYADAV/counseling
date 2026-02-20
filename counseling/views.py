@@ -47,17 +47,17 @@ def admin_dashboard_view(request):
     # Logic for pending counseling based on role
     user_upper = request.user.username.upper()
     if user_upper == 'COUNSELOR':
-        counseling_qs = StudentCounseling.objects.filter(counselor_approval='Pending')
-        grievance_qs = Grievance.objects.filter(counselor_approval='Pending')
+        counseling_qs = StudentCounseling.objects.filter(counselor_approval='Pending').exclude(approval_status='Rejected')
+        grievance_qs = Grievance.objects.filter(counselor_approval='Pending').exclude(status='Rejected')
     elif user_upper == 'HOD':
-        counseling_qs = StudentCounseling.objects.filter(hod_approval='Pending')
-        grievance_qs = Grievance.objects.filter(hod_approval='Pending')
+        counseling_qs = StudentCounseling.objects.filter(hod_approval='Pending').exclude(approval_status='Rejected')
+        grievance_qs = Grievance.objects.filter(hod_approval='Pending').exclude(status='Rejected')
     elif user_upper == 'INCHARGE':
-        counseling_qs = StudentCounseling.objects.filter(incharge_approval='Pending')
-        grievance_qs = Grievance.objects.filter(incharge_approval='Pending')
+        counseling_qs = StudentCounseling.objects.filter(incharge_approval='Pending').exclude(approval_status='Rejected')
+        grievance_qs = Grievance.objects.filter(incharge_approval='Pending').exclude(status='Rejected')
     elif user_upper == 'DIRECTOR':
-        counseling_qs = StudentCounseling.objects.filter(director_approval='Pending')
-        grievance_qs = Grievance.objects.filter(director_approval='Pending')
+        counseling_qs = StudentCounseling.objects.filter(director_approval='Pending').exclude(approval_status='Rejected')
+        grievance_qs = Grievance.objects.filter(director_approval='Pending').exclude(status='Rejected')
     else: # Superadmin (MANOJ)
         counseling_qs = StudentCounseling.objects.filter(approval_status='Pending')
         grievance_qs = Grievance.objects.filter(status='Pending')
