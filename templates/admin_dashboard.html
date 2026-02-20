@@ -89,8 +89,8 @@
             pending_counseling: Number("{{ pending_counseling|default:0 }}"),
             pending_grievances: Number("{{ pending_grievances|default:0 }}")
         };
-        window.RECENT_COUNSELING = {{ recent_counseling_json | safe }};
-        window.RECENT_GRIEVANCES = {{ recent_grievances_json | safe }};
+        window.RECENT_COUNSELING = JSON.parse('{{ recent_counseling_json|escapejs }}');
+        window.RECENT_GRIEVANCES = JSON.parse('{{ recent_grievances_json|escapejs }}');
 
         const role = window.CUR_USER.toUpperCase();
         let counselFilter = "";
