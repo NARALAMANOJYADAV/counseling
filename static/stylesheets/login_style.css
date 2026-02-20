@@ -302,19 +302,24 @@ body {
 @media (max-width: 768px) {
     body {
         background: #25252b;
-        padding: 20px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .container {
         width: 100%;
-        max-width: 400px;
+        max-width: 450px;
         height: auto;
-        min-height: 500px;
-        border: none;
-        box-shadow: none;
+        min-height: 550px;
+        border: 2px solid #e46033;
+        box-shadow: 0 0 15px rgba(228, 96, 51, 0.5);
+        border-radius: 20px;
+        background: #25252b;
     }
 
-    /* Hide the fancy overlay/info content on mobile to simplify */
+    /* Hide the fancy overlay/info content on mobile to focus on inputs */
     .info-content,
     .curved-shape,
     .curved-shape2 {
@@ -325,45 +330,89 @@ body {
         width: 100%;
         height: auto;
         position: relative;
-        padding: 30px 20px;
+        padding: 40px 30px;
+        transition: opacity 0.4s ease, transform 0.4s ease;
     }
 
-    /* Ensure both forms are accessible? 
-       Actually, the JS toggles .active on container.
-       If .active is present, show Register, else Login.
-    */
+    .form-box h2 {
+        font-size: 28px;
+        margin-bottom: 10px;
+        background: linear-gradient(to right, #fff, #e46033);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 
     .form-box.Login {
         display: flex;
+        z-index: 2;
     }
 
     .form-box.Register {
         display: flex;
-        transform: none;
-        /* Override standard transform */
-        opacity: 0;
-        pointer-events: none;
         position: absolute;
         top: 0;
         left: 0;
+        width: 100%;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(20px);
     }
 
+    /* When active, swap forms with a smooth transition */
     .container.active .form-box.Login {
         opacity: 0;
         pointer-events: none;
+        transform: translateY(-20px);
     }
 
     .container.active .form-box.Register {
         opacity: 1;
         pointer-events: auto;
-        transform: none;
-        filter: blur(0);
+        transform: translateY(0);
     }
 
-    /* Adjust animations to be simpler fade */
+    /* Adjust animations to be simpler fade/translate */
     .form-box.Login .animation,
     .form-box.Register .animation {
         transform: none !important;
-        transition: opacity 0.5s ease;
+        opacity: 1 !important;
+        filter: none !important;
+        transition: none !important;
+    }
+
+    .input-box {
+        margin-top: 30px !important;
+    }
+
+    .input-box label {
+        font-size: 15px !important;
+    }
+
+    .btn {
+        margin-top: 30px;
+        height: 50px;
+        font-size: 18px;
+    }
+
+    .regi-link {
+        margin-top: 25px;
+        font-size: 15px;
+    }
+}
+
+/* Extra Small Devices */
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+        min-height: 500px;
+    }
+
+    .form-box h2 {
+        font-size: 24px;
+    }
+
+    .input-box input {
+        font-size: 15px;
     }
 }

@@ -151,7 +151,7 @@
                                 </a>
                             </div>
 
-                            <div className="nav-item" style={{ marginTop: 'auto' }}>
+                            <div className="nav-item logout-item">
                                 <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
                                     <box-icon name='log-out' color="#ef4444"></box-icon>
                                     <span>Logout</span>
@@ -169,12 +169,12 @@
                             </div>
 
                             <div className="profile-chip">
-                                <div className="avatar">{(window.CUR_USER || 'S')[0]}</div>
+                                <div className="avatar">{(window.CUR_USER || 'S')[0].toUpperCase()}</div>
                                 <span>{window.CUR_USER || 'Student'}</span>
                             </div>
                         </header>
 
-                        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+                        <div className="stats-grid">
                             <div className={`stat-card ${!window.STATUS_DATA.grievance.toLowerCase().includes('no') ? 'active-status' : ''}`}>
                                 <div className="card-title">Grievance Status</div>
                                 <div className="card-value" style={{ color: getColor(window.STATUS_DATA.grievance) }}>

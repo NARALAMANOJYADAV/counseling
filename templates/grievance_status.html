@@ -20,59 +20,54 @@
 
 <body>
     <div class="container">
-        <div class="header">
-            <a href="{% url 'dashboard' %}" class="back-btn" id="back-link">← Back to Dashboard</a>
-            <h1 class="main-title">My Grievance History</h1>
-        </div>
+        <a href="{% url 'dashboard' %}" class="back-btn" id="back-link">← Back to Dashboard</a>
+        <h1
+            style="text-align: center; margin-bottom: 2.5rem; font-size: 2.25rem; font-weight: 800; background: linear-gradient(to right, #f43f5e, #e11d48); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+            My Grievance History</h1>
+
         <div class="django-only">
             {% if grievances %}
             {% for g in grievances %}
             <div class="grievance-card">
-                <span class="status-badge {{ g.status|lower|cut:' ' }}">{{ g.status }}</span>
-                <h3>{{ g.get_grievance_type_display }}</h3>
-                <p class="meta">Submitted on: {{ g.submission_date|date:"M d, Y" }} | Incident: {{ g.incident_date }}
+                <span class="status-badge status-{{ g.status|lower|cut:' ' }}">{{ g.status }}</span>
+                <h3 style="color: #fff; margin-bottom: 8px;">{{ g.get_grievance_type_display }}</h3>
+                <p class="meta">
+                    <span>Submitted: {{ g.submission_date|date:"M d, Y" }}</span>
+                    <span>Incident: {{ g.incident_date }}</span>
                 </p>
 
-                <p><strong>Description:</strong><br>{{ g.description }}</p>
+                <p class="description"><strong>Description:</strong><br>{{ g.description }}</p>
 
                 <!-- Approval Workflow Breakdown -->
-                <table class="approval-table"
-                    style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px;">
-                    <tr>
-                        <th
-                            style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; width: 40%;">
-                            Counselor Approval</th>
-                        <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
-                                class="status-badge status-{{ g.counselor_approval|lower }}">{{ g.counselor_approval
-                                }}</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th
-                            style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
-                            HOD Approval</th>
-                        <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
-                                class="status-badge status-{{ g.hod_approval|lower }}">{{ g.hod_approval }}</span></td>
-                    </tr>
-                    <tr>
-                        <th
-                            style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
-                            Incharge Approval</th>
-                        <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
-                                class="status-badge status-{{ g.incharge_approval|lower }}">{{ g.incharge_approval
-                                }}</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th
-                            style="text-align: left; padding: 6px 10px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
-                            Director Approval</th>
-                        <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;"><span
-                                class="status-badge status-{{ g.director_approval|lower }}">{{ g.director_approval
-                                }}</span>
-                        </td>
-                    </tr>
-                </table>
+                <div class="approval-workflow"
+                    style="margin-top: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                            <span style="color: #94a3b8; font-size: 0.875rem;">Counselor</span>
+                            <span class="status-badge status-{{ g.counselor_approval|lower }}"
+                                style="position: static; padding: 4px 10px;">{{ g.counselor_approval }}</span>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                            <span style="color: #94a3b8; font-size: 0.875rem;">HOD</span>
+                            <span class="status-badge status-{{ g.hod_approval|lower }}"
+                                style="position: static; padding: 4px 10px;">{{ g.hod_approval }}</span>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                            <span style="color: #94a3b8; font-size: 0.875rem;">Incharge</span>
+                            <span class="status-badge status-{{ g.incharge_approval|lower }}"
+                                style="position: static; padding: 4px 10px;">{{ g.incharge_approval }}</span>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px;">
+                            <span style="color: #94a3b8; font-size: 0.875rem;">Director</span>
+                            <span class="status-badge status-{{ g.director_approval|lower }}"
+                                style="position: static; padding: 4px 10px;">{{ g.director_approval }}</span>
+                        </div>
+                    </div>
+                </div>
 
                 {% if g.reply %}
                 <div class="reply-box">
@@ -83,10 +78,9 @@
             </div>
             {% endfor %}
             {% else %}
-            <p style="text-align: center;">You have not submitted any grievances yet.</p>
+            <p style="text-align: center; color: #94a3b8;">You have not submitted any grievances yet.</p>
             {% endif %}
         </div>
-
     </div>
     <script>
         // Auto-refresh if any status is Pending

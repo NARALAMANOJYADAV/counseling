@@ -110,7 +110,49 @@
         body {
             background-color: #0f172a;
             min-height: 100vh;
+            margin: 0;
             padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .profile-container {
+                padding: 20px 15px;
+                margin: 20px auto;
+                border-radius: 20px;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .large-avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
+
+            .profile-info h1 {
+                font-size: 24px;
+            }
+
+            .details-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .back-btn {
+                width: 100%;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.05);
+                padding: 12px;
+                border-radius: 12px;
+            }
         }
     </style>
 </head>
@@ -184,7 +226,8 @@
             <div class="detail-item">
                 <div class="detail-label">Residence Type</div>
                 <div class="detail-value">
-                    {% if student.residence_hostel %}Hostel{% elif student.residence_days_scholar %}Day Scholar{% else %}Not Specified{% endif %}
+                    {% if student.residence_hostel %}Hostel{% elif student.residence_days_scholar %}Day Scholar{% else
+                    %}Not Specified{% endif %}
                 </div>
             </div>
 
@@ -198,7 +241,8 @@
             <div class="detail-item">
                 <div class="detail-label">Transport Mode</div>
                 <div class="detail-value">
-                    {% if student.residence_college_bus %}College Bus{% elif student.residence_rtc_bus %}RTC Bus{% else %}Self/Other{% endif %}
+                    {% if student.residence_college_bus %}College Bus{% elif student.residence_rtc_bus %}RTC Bus{% else
+                    %}Self/Other{% endif %}
                 </div>
             </div>
 

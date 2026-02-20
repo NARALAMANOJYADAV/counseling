@@ -46,6 +46,7 @@ body {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -64,13 +65,13 @@ body {
     padding: 8px 16px;
     border-radius: 12px;
     background: white;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .back-btn:hover {
     color: var(--primary);
     transform: translateX(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .title-container {
@@ -161,9 +162,36 @@ footer {
 
 @media (max-width: 640px) {
     .container {
-        padding: 2rem 1.5rem;
+        padding: 2rem 1.25rem;
+        border-radius: 20px;
     }
+
     .main-title {
         font-size: 1.75rem;
+    }
+
+    .form-actions {
+        justify-content: center;
+    }
+
+    .form-actions button {
+        width: 100%;
+        padding: 1.125rem;
+    }
+
+    .back-btn {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-title {
+        font-size: 1.5rem;
+    }
+
+    .container {
+        padding: 1.5rem 1rem;
     }
 }

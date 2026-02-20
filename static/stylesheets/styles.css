@@ -165,18 +165,21 @@ input[type="month"] {
 @media (max-width: 768px) {
     body {
         margin: 10px;
+        background-color: #f1f5f9;
     }
 
     .title-container {
         margin: 10px 0 20px 0;
         padding: 15px;
+        border-radius: 16px;
     }
 
     .main-title {
         font-size: 1.5rem;
+        letter-spacing: 1px;
     }
 
-    /* Stack tables */
+    /* Stack tables into cards */
     table,
     thead,
     tbody,
@@ -188,37 +191,43 @@ input[type="month"] {
         height: auto !important;
     }
 
-    /* Hide table headers if they duplicate mobile labels */
-    thead tr {
-        display: none !important;
+    fieldset {
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    table {
+        background: transparent;
+        border: none !important;
+        margin-bottom: 30px;
     }
 
     tr {
         margin-bottom: 20px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
         overflow: hidden;
         background-color: #fff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        padding: 10px;
     }
 
     th {
-        background-color: #f8f9fa !important;
-        color: #333 !important;
-        padding: 10px !important;
+        background-color: #f8fafc !important;
+        color: #475569 !important;
+        padding: 12px 15px !important;
         text-align: left;
         border: none !important;
-        border-bottom: 1px solid #eee !important;
-        font-size: 0.9rem;
-        font-weight: bold;
+        border-bottom: 1px solid #f1f5f9 !important;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     td {
         border: none !important;
-        border-bottom: 1px solid #eee !important;
-        padding: 0 !important;
-        min-height: 45px;
-        position: relative !important;
+        padding: 5px 10px !important;
+        min-height: 50px;
     }
 
     /* Adjust inputs for stacked layout */
@@ -226,43 +235,78 @@ input[type="month"] {
     select,
     textarea {
         position: static !important;
-        /* Remove absolute positioning */
         width: 100% !important;
-        height: 100% !important;
+        height: auto !important;
         min-height: 45px;
-        padding: 10px !important;
-        border-radius: 0 !important;
+        padding: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
         font-size: 16px !important;
-        /* Better for mobile zoom */
+        background-color: #fff !important;
+        margin-bottom: 5px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #2193b0 !important;
+        box-shadow: 0 0 0 3px rgba(33, 147, 176, 0.1);
     }
 
     input[type="checkbox"] {
-        width: 25px !important;
-        height: 25px !important;
-        margin: 10px !important;
-        display: inline-block;
-        vertical-align: middle;
+        width: 22px !important;
+        height: 22px !important;
+        margin-right: 10px !important;
+        cursor: pointer;
     }
 
     /* Special row handling for checkboxes */
     td:has(input[type="checkbox"]) {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        padding: 0 10px !important;
+        gap: 10px;
+        padding: 15px !important;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-top: 5px;
     }
 
-    /* Make buttons friendly */
+    /* Action Buttons */
     .back-btn {
         width: 100%;
         text-align: center;
-        margin-bottom: 15px;
+        padding: 14px;
+        font-size: 1rem;
+        border-radius: 12px;
+        margin-bottom: 20px;
     }
 
     button[type="submit"],
-    button[type="button"] {
+    button[type="button"],
+    button {
         width: 100% !important;
-        margin: 10px 0 !important;
-        padding: 15px !important;
-        font-size: 1.1rem !important;
+        margin: 8px 0 !important;
+        padding: 16px !important;
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+        border-radius: 12px !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+}
+
+/* Extra Small Devices */
+@media (max-width: 480px) {
+    .main-title {
+        font-size: 1.25rem;
+    }
+
+    tr {
+        padding: 5px;
+    }
+
+    th {
+        font-size: 0.75rem;
     }
 }

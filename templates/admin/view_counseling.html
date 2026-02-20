@@ -6,9 +6,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Counseling Form - {{ student.student_name }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'stylesheets/styles.css' %}">
     <style>
+        body {
+            background: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+            padding: 20px;
+            color: #1e293b;
+        }
+
         /* Column widths for Academic Record */
         .acad-subject {
             width: 30%;
@@ -26,31 +33,24 @@
             width: 10%;
         }
 
-        /* Specific widths for Monthly Attendance labels */
         .col-label {
             width: 25% !important;
-            background-color: #f1f5f9;
-            font-weight: 600;
+            background-color: #f8fafc;
+            font-weight: 700;
+            color: #64748b;
         }
 
         table {
             width: 100%;
             table-layout: fixed;
-            /* Force consistent column widths */
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         th,
         td {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 4px;
-        }
-
-        /* Fixed width for the 'Date' column in counseling history */
-        .col-date {
-            width: 120px !important;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
         }
 
         input,
@@ -61,18 +61,22 @@
             color: #1e293b !important;
             pointer-events: none;
             width: 100%;
-            box-sizing: border-box;
-            display: block;
+            padding: 8px !important;
+            border-radius: 6px !important;
+            font-family: inherit;
         }
 
         .back-btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             margin-bottom: 20px;
-            padding: 8px 16px;
-            background: #6366f1;
+            padding: 10px 20px;
+            background: #1e293b;
             color: white;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 12px;
+            font-weight: 600;
         }
 
         @media print {
@@ -86,29 +90,26 @@
         /* Status Badges */
         .status-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 800;
             text-transform: uppercase;
         }
 
         .status-pending {
             background: #fef9c3;
             color: #854d0e;
-            border: 1px solid #fde047;
         }
 
         .status-approved {
             background: #dcfce7;
             color: #166534;
-            border: 1px solid #86efac;
         }
 
         .status-rejected {
             background: #fee2e2;
             color: #991b1b;
-            border: 1px solid #fca5a5;
         }
 
         .workflow-actions {
@@ -142,73 +143,63 @@
             background: #ef4444;
         }
 
-        /* Mobile Responsive Styles */
         @media screen and (max-width: 768px) {
             body {
                 padding: 10px;
-                background-color: #f1f5f9;
-            }
-
-            .main-container {
-                padding: 15px !important;
-                margin: 10px auto !important;
-                border-radius: 12px !important;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
-            }
-
-            .table-responsive {
-                width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                margin-bottom: 20px;
-                background: white;
-                border-radius: 8px;
-                padding: 5px;
-            }
-
-            table {
-                min-width: 600px;
-                /* Force scroll on narrow screens */
-                table-layout: auto !important;
-                /* Allow table to breathe on mobile */
+                background-color: #f8fafc;
             }
 
             .workflow-grid {
-                grid-template-columns: 1fr !important;
-                /* Stack cards */
-                gap: 15px !important;
+                grid-template-columns: 1fr;
             }
 
             .workflow-card {
-                border-right: none !important;
+                border-right: none;
                 border-bottom: 1px solid #f1f5f9;
-                padding: 20px !important;
-            }
-
-            .workflow-card:last-child {
-                border-bottom: none;
+                padding: 25px;
             }
 
             .final-status-bar {
                 flex-direction: column;
+                gap: 15px;
                 text-align: center;
-                gap: 10px;
             }
 
-            .status-badge {
-                font-size: 12px;
-                padding: 6px 14px;
+            .back-btn {
+                width: 100%;
+                justify-content: center;
             }
 
-            h1,
-            h2,
-            h3 {
-                font-size: 1.2rem !important;
+            /* Stack tables on mobile */
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block !important;
+                width: 100% !important;
             }
 
-            legend {
-                font-size: 1rem !important;
-                padding: 0 10px !important;
+            tr {
+                margin-bottom: 15px;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                overflow: hidden;
+                background: #fff;
+            }
+
+            td {
+                border: none !important;
+                padding: 12px !important;
+                position: relative;
+            }
+
+            th {
+                border: none !important;
+                background: #f8fafc !important;
+                color: #64748b !important;
+                padding: 12px !important;
             }
         }
     </style>
@@ -343,7 +334,8 @@
                         <th colspan="2">Student's Residence</th>
                         <td colspan="5">
                             Hostel <input type="checkbox" {% if student.residence_hostel %}checked{% endif %}> /
-                            Days Scholar <input type="checkbox" {% if student.residence_days_scholar %}checked{% endif %}> /
+                            Days Scholar <input type="checkbox" {% if student.residence_days_scholar %}checked{% endif
+                                %}> /
                             College Bus <input type="checkbox" {% if student.residence_college_bus %}checked{% endif %}>
                             /
                             RTC Bus <input type="checkbox" {% if student.residence_rtc_bus %}checked{% endif %}>
