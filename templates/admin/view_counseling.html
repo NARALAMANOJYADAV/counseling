@@ -437,36 +437,32 @@
                         <td><input type="text" value="{{ student.classes_conducted5|default:'' }}"></td>
                         <td rowspan="4"><textarea rows="4">{{ student.followup5|default:'' }}</textarea></td>
                     </tr>
+                    <tr>
+                        <td>Classes Attended</td>
+                        <td><input type="text" value="{{ student.classes_attended1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.classes_attended2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.classes_attended3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.classes_attended4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.classes_attended5|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td>% Attendance</td>
+                        <td><input type="text" value="{{ student.attendance_percent1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.attendance_percent2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.attendance_percent3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.attendance_percent4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.attendance_percent5|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td>Monthly Letter(Yes/No)</td>
+                        <td><input type="text" value="{{ student.monthly_letter1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.monthly_letter2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.monthly_letter3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.monthly_letter4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.monthly_letter5|default:'' }}"></td>
+                    </tr>
                 </table>
             </div>
-            <td><input type="text" value="{{ student.classes_conducted5|default:'' }}"></td>
-            <td rowspan="4"><textarea rows="4">{{ student.followup5|default:'' }}</textarea></td>
-            </tr>
-            <tr>
-                <td>Classes Attended</td>
-                <td><input type="text" value="{{ student.classes_attended1|default:'' }}"></td>
-                <td><input type="text" value="{{ student.classes_attended2|default:'' }}"></td>
-                <td><input type="text" value="{{ student.classes_attended3|default:'' }}"></td>
-                <td><input type="text" value="{{ student.classes_attended4|default:'' }}"></td>
-                <td><input type="text" value="{{ student.classes_attended5|default:'' }}"></td>
-            </tr>
-            <tr>
-                <td>% Attendance</td>
-                <td><input type="text" value="{{ student.attendance_percent1|default:'' }}"></td>
-                <td><input type="text" value="{{ student.attendance_percent2|default:'' }}"></td>
-                <td><input type="text" value="{{ student.attendance_percent3|default:'' }}"></td>
-                <td><input type="text" value="{{ student.attendance_percent4|default:'' }}"></td>
-                <td><input type="text" value="{{ student.attendance_percent5|default:'' }}"></td>
-            </tr>
-            <tr>
-                <td>Monthly Letter(Yes/No)</td>
-                <td><input type="text" value="{{ student.monthly_letter1|default:'' }}"></td>
-                <td><input type="text" value="{{ student.monthly_letter2|default:'' }}"></td>
-                <td><input type="text" value="{{ student.monthly_letter3|default:'' }}"></td>
-                <td><input type="text" value="{{ student.monthly_letter4|default:'' }}"></td>
-                <td><input type="text" value="{{ student.monthly_letter5|default:'' }}"></td>
-            </tr>
-            </table>
 
             <!-- Table 5: Academic Record -->
             <div class="table-responsive">
