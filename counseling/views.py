@@ -95,7 +95,7 @@ def counseling_form_view(request):
         # One-Time Submission Check
         # Admins (superusers) bypass this check
         if student and student.last_submission_date and not request.user.is_superuser:
-            messages.error(request, "You have already submitted the counseling form. Each user is allowed only one submission.")
+            # messages.error(request, "You have already submitted the counseling form. Each user is allowed only one submission.")
             return redirect('success')
 
         # Process form if check passes or user is admin
@@ -110,6 +110,7 @@ def counseling_form_view(request):
             instance.email = request.user.email
             instance.last_submission_date = timezone.now() # Update submission time
             instance.save()
+            request.session['submitted_now'] = True
             messages.success(request, "Counseling form submitted successfully.")
             return redirect('success')
         else:
@@ -118,7 +119,7 @@ def counseling_form_view(request):
         # GET request
         # If already submitted, redirect to success/status page
         if student and student.last_submission_date and not request.user.is_superuser:
-            messages.info(request, "You have already submitted your counseling form.")
+            # messages.info(request, "You have already submitted your counseling form.")
             return redirect('success')
 
         if student:
@@ -133,7 +134,9 @@ def success_view(request):
         student = StudentCounseling.objects.get(roll_number=request.user.username)
     except StudentCounseling.DoesNotExist:
         student = None
-    return render(request, 'success.html', {'student': student})
+    
+    submitted_now = request.session.pop('submitted_now', False)
+    return render(request, 'success.html', {'student': student, 'submitted_now': submitted_now})
 
 def csrf_failure(request, reason=""):
     messages.error(request, "Security verification failed (CSRF). Please refresh the page and try again.")

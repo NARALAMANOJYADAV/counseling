@@ -262,10 +262,38 @@
         </div>
 
         <!-- Flash messages -->
+        <style>
+            .alert-container {
+                margin: 10px 0;
+            }
+
+            .alert-item {
+                padding: 12px 18px;
+                border-radius: 8px;
+                margin-bottom: 10px;
+                font-weight: 600;
+                border: 1px solid transparent;
+            }
+
+            .alert-success-custom {
+                background: #dcfce7;
+                color: #166534;
+                border-color: #86efac;
+            }
+
+            .alert-error-custom {
+                background: #fee2e2;
+                color: #991b1b;
+                border-color: #fca5a5;
+            }
+        </style>
         {% if messages %}
-        <div class="messages-box">
+        <div class="alert-container">
             {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            <div
+                class="alert-item {% if message.tags == 'success' %}alert-success-custom{% else %}alert-error-custom{% endif %}">
+                {{ message }}
+            </div>
             {% endfor %}
         </div>
         {% endif %}

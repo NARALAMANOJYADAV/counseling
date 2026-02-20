@@ -18,7 +18,11 @@
 <body>
     <div class="success-box">
         <h2>Thank You, {{ student.student_name }}!</h2>
+        {% if submitted_now %}
         <p>Your counseling details have been successfully submitted.</p>
+        {% else %}
+        <p style="color: #666;">You are viewing your previous submission.</p>
+        {% endif %}
         <div
             style="text-align: left; margin: 20px auto; max-width: 400px; padding: 20px; background: #e8f5e9; border-radius: 8px;">
             <p><strong>Roll Number:</strong> {{ student.roll_number }}</p>
@@ -26,6 +30,12 @@
             <p><strong>Phone:</strong> {{ student.student_phone }}</p>
             <p><strong>Submission Date:</strong> {{ student.last_submission_date|date:"F d, Y" }}</p>
         </div>
+        {% if student.last_submission_date and not submitted_now %}
+        <div
+            style="background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; border: 1px solid #fecaca; text-align: center;">
+            ⚠️ You have already submitted the counseling form.
+        </div>
+        {% endif %}
         <a href="{% url 'dashboard' %}" class="dashboard-btn">Back to Dashboard</a>
         <div class="django-only" style="display: none;">
             <p style="margin-top: 10px; font-size: 0.9em; color: #666;">Note: You can only submit this form once.</p>
