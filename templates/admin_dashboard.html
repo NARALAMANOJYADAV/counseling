@@ -235,6 +235,7 @@
                                         <thead>
                                             <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
                                                 <th style={{ textAlign: 'left', padding: '10px' }}>Student</th>
+                                                <th style={{ textAlign: 'left', padding: '10px' }}>Status</th>
                                                 <th style={{ textAlign: 'left', padding: '10px' }}>Action</th>
                                             </tr>
                                         </thead>
@@ -242,8 +243,18 @@
                                             {window.RECENT_COUNSELING.length > 0 ? window.RECENT_COUNSELING.map(item => (
                                                 <tr key={item.id} style={{ borderBottom: '1px solid #0f172a' }}>
                                                     <td style={{ padding: '10px' }}>
-                                                        <div style={{ fontWeight: '500' }}>{item.name}</div>
+                                                        <div style={{ fontWeight: '500', color: '#fff' }}>{item.name}</div>
                                                         <div style={{ fontSize: '12px', color: '#94a3b8' }}>{item.roll}</div>
+                                                    </td>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <span style={{
+                                                            fontSize: '11px',
+                                                            padding: '4px 8px',
+                                                            borderRadius: '4px',
+                                                            background: item.status === 'Approved' ? '#065f46' : item.status === 'Rejected' ? '#991b1b' : '#854d0e',
+                                                            color: '#fff',
+                                                            fontWeight: '600'
+                                                        }}>{item.status}</span>
                                                     </td>
                                                     <td style={{ padding: '10px' }}>
                                                         <a href={item.link} className="view-btn" style={{
@@ -258,7 +269,7 @@
                                                         }}>View Form</a>
                                                     </td>
                                                 </tr>
-                                            )) : <tr><td colSpan="2" style={{ padding: '10px', color: '#94a3b8' }}>No pending forms</td></tr>}
+                                            )) : <tr><td colSpan="3" style={{ padding: '10px', color: '#94a3b8' }}>No submissions found</td></tr>}
                                         </tbody>
                                     </table>
                                 </div>
@@ -269,6 +280,7 @@
                                         <thead>
                                             <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
                                                 <th style={{ textAlign: 'left', padding: '10px' }}>Details</th>
+                                                <th style={{ textAlign: 'left', padding: '10px' }}>Status</th>
                                                 <th style={{ textAlign: 'left', padding: '10px' }}>Action</th>
                                             </tr>
                                         </thead>
@@ -276,8 +288,18 @@
                                             {window.RECENT_GRIEVANCES.length > 0 ? window.RECENT_GRIEVANCES.map(item => (
                                                 <tr key={item.id} style={{ borderBottom: '1px solid #0f172a' }}>
                                                     <td style={{ padding: '10px' }}>
-                                                        <div style={{ fontWeight: '500' }}>{item.roll}</div>
+                                                        <div style={{ fontWeight: '500', color: '#fff' }}>{item.roll}</div>
                                                         <div style={{ fontSize: '12px', color: '#94a3b8' }}>{item.type}</div>
+                                                    </td>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <span style={{
+                                                            fontSize: '11px',
+                                                            padding: '4px 8px',
+                                                            borderRadius: '4px',
+                                                            background: item.status === 'Resolved' ? '#065f46' : item.status === 'Rejected' ? '#991b1b' : '#854d0e',
+                                                            color: '#fff',
+                                                            fontWeight: '600'
+                                                        }}>{item.status}</span>
                                                     </td>
                                                     <td style={{ padding: '10px' }}>
                                                         <a href={item.link} className="view-btn" style={{
@@ -292,7 +314,7 @@
                                                         }}>View Form</a>
                                                     </td>
                                                 </tr>
-                                            )) : <tr><td colSpan="2" style={{ padding: '10px', color: '#94a3b8' }}>No pending grievances</td></tr>}
+                                            )) : <tr><td colSpan="3" style={{ padding: '10px', color: '#94a3b8' }}>No grievances found</td></tr>}
                                         </tbody>
                                     </table>
                                 </div>

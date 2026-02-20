@@ -44,38 +44,47 @@ def admin_dashboard_view(request):
     # Calculate stats
     total_students = StudentCounseling.objects.count()
     
-    # Logic for pending counseling based on role
+    # Logic for pending counts based on role
     user_upper = request.user.username.upper()
     if user_upper == 'COUNSELOR':
-        counseling_qs = StudentCounseling.objects.filter(counselor_approval='Pending').exclude(approval_status='Rejected')
-        grievance_qs = Grievance.objects.filter(counselor_approval='Pending').exclude(status='Rejected')
+        pending_counseling = StudentCounseling.objects.filter(counselor_approval='Pending', last_submission_date__isnull=False).count()
+        pending_grievances = Grievance.objects.filter(counselor_approval='Pending').count()
+        
+        # Recent items (all submitted, for visibility)
+        recent_counseling = StudentCounseling.objects.filter(last_submission_date__isnull=False).order_by('-last_submission_date')[:10]
+        recent_grievances = Grievance.objects.all().order_by('-submission_date')[:10]
     elif user_upper == 'HOD':
-        counseling_qs = StudentCounseling.objects.filter(hod_approval='Pending').exclude(approval_status='Rejected')
-        grievance_qs = Grievance.objects.filter(hod_approval='Pending').exclude(status='Rejected')
+        pending_counseling = StudentCounseling.objects.filter(hod_approval='Pending', last_submission_date__isnull=False).count()
+        pending_grievances = Grievance.objects.filter(hod_approval='Pending').count()
+        recent_counseling = StudentCounseling.objects.filter(last_submission_date__isnull=False).order_by('-last_submission_date')[:10]
+        recent_grievances = Grievance.objects.all().order_by('-submission_date')[:10]
     elif user_upper == 'INCHARGE':
-        counseling_qs = StudentCounseling.objects.filter(incharge_approval='Pending').exclude(approval_status='Rejected')
-        grievance_qs = Grievance.objects.filter(incharge_approval='Pending').exclude(status='Rejected')
+        pending_counseling = StudentCounseling.objects.filter(incharge_approval='Pending', last_submission_date__isnull=False).count()
+        pending_grievances = Grievance.objects.filter(incharge_approval='Pending').count()
+        recent_counseling = StudentCounseling.objects.filter(last_submission_date__isnull=False).order_by('-last_submission_date')[:10]
+        recent_grievances = Grievance.objects.all().order_by('-submission_date')[:10]
     elif user_upper == 'DIRECTOR':
-        counseling_qs = StudentCounseling.objects.filter(director_approval='Pending').exclude(approval_status='Rejected')
-        grievance_qs = Grievance.objects.filter(director_approval='Pending').exclude(status='Rejected')
-    else: # Superadmin (MANOJ)
-        counseling_qs = StudentCounseling.objects.filter(approval_status='Pending')
-        grievance_qs = Grievance.objects.filter(status='Pending')
-
-    pending_counseling = counseling_qs.count()
-    pending_grievances = grievance_qs.count()
+        pending_counseling = StudentCounseling.objects.filter(director_approval='Pending', last_submission_date__isnull=False).count()
+        pending_grievances = Grievance.objects.filter(director_approval='Pending').count()
+        recent_counseling = StudentCounseling.objects.filter(last_submission_date__isnull=False).order_by('-last_submission_date')[:10]
+        recent_grievances = Grievance.objects.all().order_by('-submission_date')[:10]
+    else: # Superadmin
+        pending_counseling = StudentCounseling.objects.filter(approval_status='Pending', last_submission_date__isnull=False).count()
+        pending_grievances = Grievance.objects.filter(status='Pending').count()
+        recent_counseling = StudentCounseling.objects.filter(last_submission_date__isnull=False).order_by('-last_submission_date')[:10]
+        recent_grievances = Grievance.objects.all().order_by('-submission_date')[:10]
 
     context = {
         'total_students': total_students,
         'pending_counseling': pending_counseling,
         'pending_grievances': pending_grievances,
         'recent_counseling_json': json.dumps([
-            {'id': s.id, 'name': s.student_name, 'roll': s.roll_number, 'link': f"/view-form/counseling/{s.id}/"}
-            for s in counseling_qs.order_by('-last_submission_date')[:5]
+            {'id': s.id, 'name': s.student_name, 'roll': s.roll_number, 'link': f"/view-form/counseling/{s.id}/", 'status': s.approval_status}
+            for s in recent_counseling
         ]),
         'recent_grievances_json': json.dumps([
-            {'id': g.id, 'roll': g.roll_number, 'type': g.grievance_type, 'link': f"/view-form/grievance/{g.id}/"}
-            for g in grievance_qs.order_by('-submission_date')[:5]
+            {'id': g.id, 'roll': g.roll_number, 'type': g.grievance_type, 'link': f"/view-form/grievance/{g.id}/", 'status': g.status}
+            for g in recent_grievances
         ]),
     }
     return render(request, 'admin_dashboard.html', context)
