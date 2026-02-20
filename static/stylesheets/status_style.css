@@ -1,0 +1,148 @@
+/* Inlined styles from base.html and styles.css */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    line-height: 1.6;
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.title-container {
+    text-align: center;
+    margin: 0 0 30px 0;
+}
+
+.main-title {
+    font-size: 2.2em;
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    display: inline-block;
+}
+
+/* Custom View Approval Styles */
+.va-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.va-input-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.va-input-group label {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #333;
+}
+
+.va-input-group input {
+    padding: 10px;
+    font-size: 1.2em;
+    width: 150px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    transition: border-color 0.3s;
+}
+
+.va-input-group input:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+#va-result {
+    font-size: 1.5em;
+    font-weight: 700;
+    min-height: 30px;
+    margin-top: 15px;
+}
+
+/* Status Details Table */
+.va-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.va-details-table th,
+.va-details-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+.va-details-table th {
+    background-color: #f2f2f2;
+    width: 200px;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.approved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+        width: 100%;
+    }
+
+    .title-container h1 {
+        font-size: 1.5rem;
+    }
+
+    /* Make the details table scrollable */
+    .va-details-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .va-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .va-input-group input {
+        width: 100%;
+    }
+}

@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ["python311"]
+
+[phases.install]
+cmds = ["python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"]
+
+[phases.build]
+cmds = [
+    ". /opt/venv/bin/activate && python manage.py collectstatic --no-input",
+    ". /opt/venv/bin/activate && python manage.py migrate",
+    ". /opt/venv/bin/activate && python create_admin.py",
+    ". /opt/venv/bin/activate && python create_approval_users.py"
+]
+
+[start]
+cmd = ". /opt/venv/bin/activate && bash start.sh"

@@ -1,0 +1,124 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #25252b;
+    /* Matching login background */
+    color: #fff;
+}
+
+.container {
+    text-align: center;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+    color: #e46033;
+    /* Matching accent color */
+}
+
+.welcome-text {
+    margin-bottom: 50px;
+    font-size: 1.2rem;
+    color: #ccc;
+}
+
+.card-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid #e46033;
+    border-radius: 15px;
+    padding: 40px 20px;
+    width: 300px;
+    cursor: pointer;
+    transition: 0.3s;
+    text-decoration: none;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 0 15px rgba(228, 96, 51, 0.2);
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    background: #e46033;
+    box-shadow: 0 0 30px rgba(228, 96, 51, 0.6);
+    color: white;
+}
+
+.card-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.card h2 {
+    font-size: 1.5rem;
+    margin-top: 10px;
+}
+
+.logout-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid #e46033;
+    color: #e46033;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.logout-btn:hover {
+    background: #e46033;
+    color: white;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 400px;
+        flex-direction: row;
+        padding: 20px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-icon {
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+
+    .card h2 {
+        font-size: 1.2rem;
+    }
+}
