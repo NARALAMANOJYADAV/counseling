@@ -287,7 +287,51 @@ def admin_view_grievance(request, pk):
     if not request.user.is_staff:
         return redirect('dashboard')
     grievance = get_object_or_404(Grievance, pk=pk)
-    return render(request, 'admin/view_grievance.html', {'grievance': grievance})
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        target_role = request.POST.get('target_role')
+        user_role = request.user.username.upper()
+
+        # Superusers can act as any role; others can only act as themselves
+        role_to_act_as = target_role if (request.user.is_superuser and target_role) else user_role
+
+        updated = False
+        if role_to_act_as == 'COUNSELOR':
+            grievance.counselor_approval = action
+            updated = True
+        elif role_to_act_as == 'HOD':
+            grievance.hod_approval = action
+            updated = True
+        elif role_to_act_as == 'INCHARGE':
+            grievance.incharge_approval = action
+            updated = True
+        elif role_to_act_as == 'DIRECTOR':
+            grievance.director_approval = action
+            updated = True
+
+        if updated:
+            # Automatic Final Status Logic
+            approvals = [
+                grievance.counselor_approval,
+                grievance.hod_approval,
+                grievance.incharge_approval,
+                grievance.director_approval,
+            ]
+            if 'Rejected' in approvals:
+                grievance.status = 'Rejected'
+            elif all(a == 'Approved' for a in approvals):
+                grievance.status = 'Resolved'
+            else:
+                grievance.status = 'Pending'
+
+            grievance.save()
+            messages.success(request, f"Grievance status updated to {action} successfully.")
+
+        return redirect('admin_view_grievance', pk=pk)
+
+    role = request.user.username.upper()
+    return render(request, 'admin/view_grievance.html', {'grievance': grievance, 'role': role})
 
 def logout_view(request):
     logout(request)

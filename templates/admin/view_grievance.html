@@ -8,27 +8,39 @@
     <title>View Grievance - {{ grievance.roll_number }}</title>
     <link rel="stylesheet" href="{% static 'stylesheets/grievance_style.css' %}">
     <style>
+        body {
+            background: #f1f5f9;
+            font-family: 'Poppins', sans-serif;
+            padding: 20px;
+        }
+
         .view-only-box {
             background: #fff;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 28px;
+            border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 30px;
         }
 
         .data-label {
             font-weight: 600;
             color: #4b5563;
-            margin-top: 15px;
+            margin-top: 18px;
             display: block;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .data-value {
             background: #f9fafb;
-            padding: 10px;
+            padding: 10px 14px;
             border: 1px solid #e5e7eb;
-            border-radius: 4px;
+            border-radius: 6px;
             margin-top: 5px;
             min-height: 40px;
+            font-size: 15px;
+            color: #1e293b;
         }
 
         .back-btn {
@@ -39,6 +51,21 @@
             color: white;
             text-decoration: none;
             border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .print-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
         }
 
         .attachment-link {
@@ -46,36 +73,210 @@
             text-decoration: underline;
         }
 
-        .status-text {
-            font-weight: bold;
+        /* ---------- Status Badges ---------- */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .resolved {
-            color: #059669;
+        .status-pending {
+            background: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #fde047;
         }
 
-        .rejected {
-            color: #dc2626;
+        .status-approved {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
         }
 
-        .pending {
-            color: #d97706;
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .status-resolved {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        /* ---------- Workflow Section ---------- */
+        .workflow-section {
+            margin-top: 30px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .workflow-header {
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+            color: white;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .workflow-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: white;
+        }
+
+        .workflow-card {
+            padding: 24px;
+            border-right: 1px solid #f1f5f9;
+            text-align: center;
+        }
+
+        .workflow-card:last-child {
+            border-right: none;
+        }
+
+        .workflow-card h4 {
+            margin: 0 0 12px 0;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .workflow-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .workflow-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .workflow-btn:hover {
+            opacity: 0.85;
+            transform: scale(1.03);
+        }
+
+        .btn-approve {
+            background: #10b981;
+        }
+
+        .btn-reject {
+            background: #ef4444;
+        }
+
+        .final-status-bar {
+            background: #f8fafc;
+            padding: 20px 28px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .final-status-bar .label {
+            color: #64748b;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Messages */
+        .messages-box {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        @media screen and (max-width: 768px) {
+            .workflow-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .workflow-card {
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .final-status-bar {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+        }
+
+        @media print {
+
+            .back-btn,
+            .print-btn,
+            .workflow-actions {
+                display: none !important;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div style="max-width: 800px; margin: 20px auto; padding: 0 20px;">
-        <a href="javascript:history.back()" class="back-btn">← Back</a>
-        <button onclick="window.print()" class="back-btn"
-            style="background: #10b981; border: none; cursor: pointer; margin-left:10px;">Print Grievance</button>
-    </div>
+    <div style="max-width: 900px; margin: 0 auto;">
 
-    <main class="container">
-        <div class="title-container">
-            <h1 class="main-title">GRIEVANCE SUBMISSION DETAILS</h1>
+        <!-- Nav buttons -->
+        <div style="margin-bottom: 10px;">
+            <a href="javascript:history.back()" class="back-btn">← Back</a>
+            <button onclick="window.print()" class="print-btn">🖨 Print Grievance</button>
         </div>
 
+        <!-- Flash messages -->
+        {% if messages %}
+        <div class="messages-box">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div style="text-align:center; margin-bottom: 24px;">
+            <h1 style="font-size:26px; color:#1e293b; font-weight:800; margin:0;">GRIEVANCE SUBMISSION DETAILS</h1>
+            <p style="color:#64748b; margin:4px 0 0;">Roll No: <strong>{{ grievance.roll_number }}</strong>
+                &nbsp;|&nbsp; Submitted: <strong>{{ grievance.submission_date|date:"d M Y" }}</strong></p>
+        </div>
+
+        <!-- Grievance Details -->
         <div class="view-only-box">
             <span class="data-label">Student Roll No.</span>
             <div class="data-value">{{ grievance.roll_number }}</div>
@@ -92,24 +293,114 @@
             {% if grievance.attachment %}
             <span class="data-label">Supporting Document</span>
             <div class="data-value">
-                <a href="{{ grievance.attachment.url }}" class="attachment-link" target="_blank">View Attached
+                <a href="{{ grievance.attachment.url }}" class="attachment-link" target="_blank">📄 View Attached
                     Document</a>
             </div>
             {% endif %}
 
-            <span class="data-label">Current Status</span>
-            <div class="data-value status-text {{ grievance.status|slugify }}">
-                {{ grievance.status }}
-            </div>
-
             {% if grievance.reply %}
             <span class="data-label">Official Reply</span>
-            <div class="data-value" style="border-left: 4px solid #6366f1; background: #eef2ff;">
+            <div class="data-value" style="border-left: 4px solid #e11d48; background: #fff1f2;">
                 {{ grievance.reply }}
             </div>
             {% endif %}
         </div>
-    </main>
+
+        <!-- ====== Approval Workflow ====== -->
+        <div class="workflow-section">
+            <div class="workflow-header">
+                <h3>🔐 OFFICIAL APPROVAL WORKFLOW</h3>
+            </div>
+
+            <div class="workflow-grid">
+
+                <!-- COUNSELOR -->
+                <div class="workflow-card">
+                    <h4>COUNSELOR</h4>
+                    <div style="margin-bottom: 14px;">
+                        <span class="status-badge status-{{ grievance.counselor_approval|lower }}">
+                            {{ grievance.counselor_approval }}
+                        </span>
+                    </div>
+                    {% if role == 'COUNSELOR' or user.is_superuser %}
+                    <form method="POST" class="workflow-actions">
+                        {% csrf_token %}
+                        <input type="hidden" name="target_role" value="COUNSELOR">
+                        <button name="action" value="Approved" class="workflow-btn btn-approve">✔ Approve</button>
+                        <button name="action" value="Rejected" class="workflow-btn btn-reject">✘ Reject</button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                <!-- HOD -->
+                <div class="workflow-card">
+                    <h4>HOD</h4>
+                    <div style="margin-bottom: 14px;">
+                        <span class="status-badge status-{{ grievance.hod_approval|lower }}">
+                            {{ grievance.hod_approval }}
+                        </span>
+                    </div>
+                    {% if role == 'HOD' or user.is_superuser %}
+                    <form method="POST" class="workflow-actions">
+                        {% csrf_token %}
+                        <input type="hidden" name="target_role" value="HOD">
+                        <button name="action" value="Approved" class="workflow-btn btn-approve">✔ Approve</button>
+                        <button name="action" value="Rejected" class="workflow-btn btn-reject">✘ Reject</button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                <!-- INCHARGE -->
+                <div class="workflow-card">
+                    <h4>INCHARGE</h4>
+                    <div style="margin-bottom: 14px;">
+                        <span class="status-badge status-{{ grievance.incharge_approval|lower }}">
+                            {{ grievance.incharge_approval }}
+                        </span>
+                    </div>
+                    {% if role == 'INCHARGE' or user.is_superuser %}
+                    <form method="POST" class="workflow-actions">
+                        {% csrf_token %}
+                        <input type="hidden" name="target_role" value="INCHARGE">
+                        <button name="action" value="Approved" class="workflow-btn btn-approve">✔ Approve</button>
+                        <button name="action" value="Rejected" class="workflow-btn btn-reject">✘ Reject</button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                <!-- DIRECTOR -->
+                <div class="workflow-card">
+                    <h4>DIRECTOR</h4>
+                    <div style="margin-bottom: 14px;">
+                        <span class="status-badge status-{{ grievance.director_approval|lower }}">
+                            {{ grievance.director_approval }}
+                        </span>
+                    </div>
+                    {% if role == 'DIRECTOR' or user.is_superuser %}
+                    <form method="POST" class="workflow-actions">
+                        {% csrf_token %}
+                        <input type="hidden" name="target_role" value="DIRECTOR">
+                        <button name="action" value="Approved" class="workflow-btn btn-approve">✔ Approve</button>
+                        <button name="action" value="Rejected" class="workflow-btn btn-reject">✘ Reject</button>
+                    </form>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <!-- Final Status Bar -->
+            <div class="final-status-bar">
+                <div class="label">FINAL GRIEVANCE STATUS:</div>
+                <div>
+                    <span class="status-badge status-{{ grievance.status|lower }}"
+                        style="font-size: 18px; padding: 10px 28px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
+                        {{ grievance.status|upper }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </body>
 
 </html>
