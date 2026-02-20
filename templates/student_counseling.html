@@ -569,6 +569,38 @@
                 </div>
             </div>
 
+            <!-- SECTION 6: COUNSELING & ACHIEVEMENTS -->
+            <div class="form-section">
+                <h2 class="section-title">Counseling & Achievements</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description of Counseling</th>
+                                <th>Prizes, Participations, Disciplinary Matters, etc.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="date" name="counseling_date1"></td>
+                                <td><textarea name="counseling_description1" rows="2"
+                                        placeholder="Details of session..."></textarea></td>
+                                <td><textarea name="prizes_participations1" rows="2"
+                                        placeholder="Achievements..."></textarea></td>
+                            </tr>
+                            {% for i in "2345"|make_list %}
+                            <tr>
+                                <td><input type="date" name="counseling_date{{i}}"></td>
+                                <td colspan="2"><textarea name="prizes_participations{{i}}" rows="2"
+                                        placeholder="More participations/achievements..."></textarea></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- ACTION BAR -->
             <div class="action-bar">
                 <button type="button" class="btn btn-clear" onclick="window.location.reload()">Reset Draft</button>
