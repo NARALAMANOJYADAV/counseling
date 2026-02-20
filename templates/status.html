@@ -1,113 +1,65 @@
-<div class="django-only" style="display: none;">{% load static %}</div>
+{% load static %}
 <!doctype html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>View Approval Status</title>
-
-    <link rel="stylesheet" href="{% static 'stylesheets/status_style.css' %}" id="main-styles">
-    <style>
-        .django-only {
-            display: block;
-        }
-    </style>
-
-
+    <title>Status | NBKRIST</title>
+    <link rel="stylesheet" href="{% static 'stylesheets/status_style.css' %}">
 </head>
 
 <body>
     <main class="container">
         <div class="title-container">
-            <h1 class="main-title">Check Submission Approval Status</h1>
+            <h1 class="main-title">Application Status</h1>
         </div>
 
-        <!-- Hidden input section since we are using logged-in user -->
-        <!-- 
-        <div class="va-section">
-            <div class="va-input-group">
-                <label for="va-roll">Enter Roll No:</label>
-                <input id="va-roll" type="text" placeholder="e.g., 64" autocomplete="off" aria-label="roll number" />
-            </div>
-            <div id="va-result">Enter your Roll No above to check status.</div>
+        {% if student %}
+        <div class="student-info">
+            <h3>Submission for</h3>
+            <p>{{ student.student_name }} ({{ student.roll_number }})</p>
         </div>
-        -->
 
-        <div id="va-details">
-            <div class="django-only">
-                {% if student %}
-                <h3>Found 1 submission for Roll No: {{ student.roll_number }}</h3>
-
-                <div style="margin-bottom: 20px; border:1px solid #ccc; padding:10px; border-radius:4px;">
-                    <h4>Student: {{ student.student_name }}</h4>
-                    <table class="va-details-table">
-                        <tr>
-                            <th>Final Status</th>
-                            <td>
-                                <span class="status-badge {{ student.approval_status|lower }}">{{
-                                    student.approval_status }}</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Counselor Approval</th>
-                            <td><span class="status-badge {{ student.counselor_approval|lower }}">{{
-                                    student.counselor_approval }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>HOD Approval</th>
-                            <td><span class="status-badge {{ student.hod_approval|lower }}">{{ student.hod_approval
-                                    }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>Incharge Approval</th>
-                            <td><span class="status-badge {{ student.incharge_approval|lower }}">{{
-                                    student.incharge_approval }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>Director Approval</th>
-                            <td><span class="status-badge {{ student.director_approval|lower }}">{{
-                                    student.director_approval }}</span></td>
-                        </tr>
-                    </table>
-                </div>
+        <div class="status-display">
+            <div class="status-icon">
+                {% if student.approval_status == 'Approved' %}
+                ✅
+                {% elif student.approval_status == 'Rejected' %}
+                ❌
                 {% else %}
-                <div class="va-section">
-                    <div id="va-result" style="color: #721c24;">No submission found for this account. Please submit the
-                        counseling form first.</div>
-                </div>
+                ⏳
                 {% endif %}
             </div>
+            <div class="status-label">Your final status is</div>
+            <div class="status-value status-{{ student.approval_status|lower }}">
+                {{ student.approval_status|upper }}
+            </div>
         </div>
 
-        <div style="text-align: right; margin-top: 20px;">
-            <a href="{% url 'dashboard' %}" id="back-link"
-                style="text-decoration: none; padding: 10px 15px; background: #6c757d; color: white; border-radius: 4px;">
-                ← Go Back to Dashboard
-            </a>
-            <a href="{% url 'logout' %}" id="logout-link"
-                style="text-decoration: none; padding: 10px 15px; background: #dc3545; color: white; border-radius: 4px; margin-left: 10px;">
-                Logout
-            </a>
+        {% else %}
+        <div class="status-display">
+            <div class="status-icon">❓</div>
+            <div class="status-label">No submission found</div>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Please submit the counseling form first to see
+                your status.</p>
         </div>
+        {% endif %}
 
+        <div class="actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+            <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
+        </div>
     </main>
+
+    {% if student and student.approval_status == 'Pending' %}
     <script>
         // Auto-refresh if status is Pending
-        const statusElements = document.querySelectorAll('.status-badge');
-        let isPending = false;
-        statusElements.forEach(el => {
-            if (el.textContent.trim().toLowerCase() === 'pending') {
-                isPending = true;
-            }
-        });
-
-        if (isPending) {
-            setTimeout(() => {
-                window.location.reload();
-            }, 10000); // 10 seconds
-        }
+        setTimeout(() => {
+            window.location.reload();
+        }, 10000); // 10 seconds
     </script>
+    {% endif %}
 </body>
 
 </html>
