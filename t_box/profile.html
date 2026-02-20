@@ -1,0 +1,217 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile | NBKRIST</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
+    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+
+    <style>
+        .profile-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            color: #f8fafc;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .large-avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: 700;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .profile-info h1 {
+            font-size: 28px;
+            margin: 0;
+            color: #fff;
+        }
+
+        .profile-info p {
+            color: #94a3b8;
+            margin: 5px 0 0;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #6366f1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            color: #e2e8f0;
+        }
+
+        .section-title {
+            grid-column: 1 / -1;
+            font-size: 18px;
+            margin: 20px 0 10px;
+            color: #818cf8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .back-btn:hover {
+            color: #fff;
+        }
+
+        body {
+            background-color: #0f172a;
+            min-height: 100vh;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="max-width: 900px; margin: 0 auto;">
+        <a href="{% url 'dashboard' %}" class="back-btn">
+            <box-icon name='left-arrow-alt' color='#94a3b8'></box-icon>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="large-avatar">{{ student.student_name.0|upper }}</div>
+            <div class="profile-info">
+                <h1>{{ student.student_name }}</h1>
+                <p>Roll Number: {{ student.roll_number }}</p>
+                <div style="margin-top: 10px;">
+                    <span class="status-badge {{ student.approval_status|lower }}">{{ student.approval_status }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-grid">
+            <div class="section-title">
+                <box-icon name='user' color='#818cf8'></box-icon>
+                General Information
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Year & Semester</div>
+                <div class="detail-value">{{ student.year_sem|default:"Not Provided" }}</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Academic Year</div>
+                <div class="detail-value">{{ student.academic_year|default:"Not Provided" }}</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Couselor Name</div>
+                <div class="detail-value">{{ student.counselor_name|default:"Not Assigned" }}</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Email Address</div>
+                <div class="detail-value">{{ student.email|default:user.email }}</div>
+            </div>
+
+            <div class="section-title">
+                <box-icon name='phone' color='#818cf8'></box-icon>
+                Contact Information
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Student Phone</div>
+                <div class="detail-value">{{ student.student_phone|default:"Not Provided" }}</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Father's Phone</div>
+                <div class="detail-value">{{ student.father_phone|default:"Not Provided" }}</div>
+            </div>
+
+            <div class="section-title">
+                <box-icon name='home' color='#818cf8'></box-icon>
+                Residence & Transport
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Residence Type</div>
+                <div class="detail-value">
+                    {% if student.residence_hostel %}Hostel{% elif student.residence_days_scholar %}Day Scholar{% else
+                    %}Not Specified{% endif %}
+                </div>
+            </div>
+
+            {% if student.residence_hostel %}
+            <div class="detail-item">
+                <div class="detail-label">Hostel Name</div>
+                <div class="detail-value">{{ student.hostel_name }} | Room {{ student.room_no }}</div>
+            </div>
+            {% endif %}
+
+            <div class="detail-item">
+                <div class="detail-label">Transport Mode</div>
+                <div class="detail-value">
+                    {% if student.residence_college_bus %}College Bus{% elif student.residence_rtc_bus %}RTC Bus{% else
+                    %}Self/Other{% endif %}
+                </div>
+            </div>
+
+            {% if student.residence_college_bus %}
+            <div class="detail-item">
+                <div class="detail-label">Bus Route</div>
+                <div class="detail-value">{{ student.bus_route }} (No. {{ student.bus_no }})</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>

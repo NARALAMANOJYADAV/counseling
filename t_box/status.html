@@ -1,0 +1,103 @@
+<div class="django-only" style="display: none;">{% load static %}</div>
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>View Approval Status</title>
+
+    <link rel="stylesheet" href="{% static 'stylesheets/status_style.css' %}" id="main-styles">
+    <style>
+        .django-only {
+            display: block;
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <main class="container">
+        <div class="title-container">
+            <h1 class="main-title">Check Submission Approval Status</h1>
+        </div>
+
+        <!-- Hidden input section since we are using logged-in user -->
+        <!-- 
+        <div class="va-section">
+            <div class="va-input-group">
+                <label for="va-roll">Enter Roll No:</label>
+                <input id="va-roll" type="text" placeholder="e.g., 64" autocomplete="off" aria-label="roll number" />
+            </div>
+            <div id="va-result">Enter your Roll No above to check status.</div>
+        </div>
+        -->
+
+        <div id="va-details">
+            <div class="django-only">
+                {% if student %}
+                <h3>Found 1 submission for Roll No: {{ student.roll_number }}</h3>
+
+                <div style="margin-bottom: 20px; border:1px solid #ccc; padding:10px; border-radius:4px;">
+                    <h4>Student: {{ student.student_name }}</h4>
+                    <table class="va-details-table">
+                        <tr>
+                            <th>Final Status</th>
+                            <td>
+                                <span class="status-badge {{ student.approval_status|lower }}">{{
+                                    student.approval_status
+                                    }}</span>
+                            </td>
+                        </tr>
+                        <!-- Mocking hierarchy based on single status as per requested design logic -->
+                        <tr>
+                            <th>Counselor Approval</th>
+                            <td><span class="status-badge {{ student.approval_status|lower }}">{{
+                                    student.approval_status
+                                    }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Incharge Approval</th>
+                            <td><span class="status-badge {{ student.approval_status|lower }}">{{
+                                    student.approval_status
+                                    }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>HOD Approval</th>
+                            <td><span class="status-badge {{ student.approval_status|lower }}">{{
+                                    student.approval_status
+                                    }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Director Approval</th>
+                            <td><span class="status-badge {{ student.approval_status|lower }}">{{
+                                    student.approval_status
+                                    }}</span></td>
+                        </tr>
+                    </table>
+                </div>
+                {% else %}
+                <div class="va-section">
+                    <div id="va-result" style="color: #721c24;">No submission found for this account. Please submit the
+                        counseling form first.</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="text-align: right; margin-top: 20px;">
+            <a href="{% url 'dashboard' %}" id="back-link"
+                style="text-decoration: none; padding: 10px 15px; background: #6c757d; color: white; border-radius: 4px;">
+                ← Go Back to Dashboard
+            </a>
+            <a href="{% url 'logout' %}" id="logout-link"
+                style="text-decoration: none; padding: 10px 15px; background: #dc3545; color: white; border-radius: 4px; margin-left: 10px;">
+                Logout
+            </a>
+        </div>
+
+    </main>
+</body>
+
+</html>

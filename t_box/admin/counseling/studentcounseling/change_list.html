@@ -1,0 +1,21 @@
+
+{% extends "admin/change_list.html" %}
+
+{% block result_list %}
+    {% if subject_stats %}
+    <div style="background: #f8f8f8; padding: 10px; margin: 10px 0; border: 1px solid #ddd;">
+        <h3>Subject Statistics for "{{ subject_stats.name }}"</h3>
+        <p><span style="color: green;">{{ subject_stats.pass_count }} Passed</span> | 
+           <span style="color: red;">{{ subject_stats.fail_count }} Failed</span> | 
+           {{ subject_stats.total }} Total students</p>
+    </div>
+    {% endif %}
+    
+    {{ block.super }}
+{% endblock %}
+
+{% block search %}
+    {{ subject_search_form }}
+    {{ block.super }}
+{% endblock %}
+    

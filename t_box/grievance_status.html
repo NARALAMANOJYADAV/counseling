@@ -1,0 +1,55 @@
+<div class="django-only" style="display: none;">{% load static %}</div>
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grievance Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'stylesheets/grievance_status_style.css' %}" id="main-styles">
+
+    <style>
+        .django-only {
+            display: block;
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="{% url 'dashboard' %}" class="back-btn" id="back-link">← Back to Dashboard</a>
+            <h1 class="main-title">My Grievance History</h1>
+        </div>
+        <div class="django-only">
+            {% if grievances %}
+            {% for g in grievances %}
+            <div class="grievance-card">
+                <span class="status-badge status-{{ g.status|lower|cut:' ' }}">{{ g.status }}</span>
+                <h3>{{ g.get_grievance_type_display }}</h3>
+                <p class="meta">Submitted on: {{ g.submission_date|date:"M d, Y" }} | Incident: {{ g.incident_date }}
+                </p>
+
+                <p><strong>Description:</strong><br>{{ g.description }}</p>
+
+                {% if g.reply %}
+                <div class="reply-box">
+                    <strong>Admin Reply:</strong><br>
+                    {{ g.reply }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="text-align: center;">You have not submitted any grievances yet.</p>
+            {% endif %}
+        </div>
+
+    </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<div style="display:none;">{% load static %}</div>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | NBKRIST</title>
+
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Advanced Dashboard Styles -->
+    <link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
+
+    <!-- React & Babel Standalone -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Boxicons -->
+    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+</head>
+
+<body>
+    <div id="root">
+        <div
+            style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; color: white; font-family: 'Outfit', sans-serif;">
+            <div style="text-align: center;">
+                <div
+                    style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #818cf8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;">
+                </div>
+                <h2>Loading Admin Portal...</h2>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .stat-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: #fff;
+        }
+
+        .stat-card .card-title {
+            color: #94a3b8;
+        }
+
+        .active-glow {
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(99, 102, 241, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .main-content {
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .welcome-section p {
+            color: #94a3b8;
+        }
+    </style>
+
+    <script>
+        window.CUR_USER = "{{ user.username|default:'Admin' }}";
+        window.STATS = {
+            total_students: Number("{{ total_students|default:0 }}"),
+            pending_counseling: Number("{{ pending_counseling|default:0 }}"),
+            pending_grievances: Number("{{ pending_grievances|default:0 }}")
+        };
+        window.RECENT_COUNSELING = {{ recent_counseling_json | safe }};
+        window.RECENT_GRIEVANCES = {{ recent_grievances_json | safe }};
+
+        const role = window.CUR_USER.toUpperCase();
+        let counselFilter = "";
+        let grievanceFilter = "";
+
+        if (role === 'COUNSELOR') {
+            counselFilter = "?counselor_approval__exact=Pending";
+            grievanceFilter = "?counselor_approval__exact=Pending";
+        } else if (role === 'HOD') {
+            counselFilter = "?hod_approval__exact=Pending";
+            grievanceFilter = "?hod_approval__exact=Pending";
+        } else if (role === 'INCHARGE') {
+            counselFilter = "?incharge_approval__exact=Pending";
+            grievanceFilter = "?incharge_approval__exact=Pending";
+        } else if (role === 'DIRECTOR') {
+            counselFilter = "?director_approval__exact=Pending";
+            grievanceFilter = "?director_approval__exact=Pending";
+        }
+
+        window.URLS = {
+            'counseling': "/admin/counseling/studentcounseling/" + counselFilter,
+            'grievance': "/admin/counseling/grievance/" + grievanceFilter,
+            'users': "/admin/auth/user/",
+            'logout': "{% url 'logout' %}"
+        };
+    </script>
+
+    {% verbatim %}
+    <script type="text/babel">
+        const AdminDashboard = () => {
+            const menuItems = [
+                { id: 'counseling', label: 'Manage Counseling', icon: 'file-doc', color: 'bg-purple' },
+                { id: 'grievance', label: 'Handle Grievances', icon: 'error-alt', color: 'bg-rose' },
+                { id: 'users', label: 'User Directory', icon: 'group', color: 'bg-blue' },
+            ];
+
+            return (
+                <div className="dashboard-layout">
+                    <aside className="sidebar" style={{ background: '#020617' }}>
+                        <div className="logo">
+                            <box-icon name='shield-quarter' type='solid' color='#818cf8'></box-icon>
+                            <span>ADMIN PANEL</span>
+                        </div>
+
+                        <nav className="nav-links">
+                            <div className="nav-item">
+                                <a href="#" className="nav-link active">
+                                    <box-icon name='dashboard' type='solid' color="white"></box-icon>
+                                    <span>Home</span>
+                                </a>
+                            </div>
+                            <div className="nav-item">
+                                <a href={window.URLS['counseling']} className="nav-link">
+                                    <box-icon name='list-ul' color="#94a3b8"></box-icon>
+                                    <span>Approvals</span>
+                                </a>
+                            </div>
+
+                            <div className="nav-item" style={{ marginTop: 'auto' }}>
+                                <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
+                                    <box-icon name='log-out' color="#ef4444"></box-icon>
+                                    <span>Exit Portal</span>
+                                </a>
+                            </div>
+                        </nav>
+                    </aside>
+
+                    <main className="main-content">
+                        <header className="header">
+                            <div className="welcome-section">
+                                <h1 style={{ color: '#fff' }}>Admin Dashboard 👋</h1>
+                                <p>Managing academic counseling & grievance systems.</p>
+                            </div>
+
+                            <div className="profile-chip" style={{ background: '#1e293b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div className="avatar" style={{ background: '#6366f1' }}>{window.CUR_USER[0].toUpperCase()}</div>
+                                <span>{window.CUR_USER}</span>
+                            </div>
+                        </header>
+
+                        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+                            <div className="stat-card">
+                                <div className="card-title">Total Students</div>
+                                <div className="card-value" style={{ color: '#6366f1' }}>{window.STATS.total_students}</div>
+                            </div>
+                            <div className={`stat-card ${window.STATS.pending_counseling > 0 ? 'active-glow' : ''}`}>
+                                <div className="card-title">Pending Counseling</div>
+                                <div className="card-value" style={{ color: '#f59e0b' }}>{window.STATS.pending_counseling}</div>
+                            </div>
+                            <div className={`stat-card ${window.STATS.pending_grievances > 0 ? 'active-glow' : ''}`}>
+                                <div className="card-title">Pending Grievances</div>
+                                <div className="card-value" style={{ color: '#ef4444' }}>{window.STATS.pending_grievances}</div>
+                            </div>
+                        </div>
+
+                        <div className="quick-actions" style={{ marginTop: '2rem' }}>
+                            {menuItems.map(item => (
+                                <a key={item.id} href={window.URLS[item.id]} className="action-btn" style={{ background: '#1e293b', color: '#fff' }}>
+                                    <div className={`icon-wrapper ${item.color}`}>
+                                        <box-icon name={item.icon} type='solid' color='white' size='md'></box-icon>
+                                    </div>
+                                    <span>{item.label}</span>
+                                </a>
+                            ))}
+                        </div>
+
+                        <div className="recent-submissions" style={{ marginTop: '2.5rem' }}>
+                            <h2 style={{ color: '#fff', marginBottom: '1.5rem', borderBottom: '2px solid #334155', paddingBottom: '0.5rem' }}>
+                                Recent Submissions
+                            </h2>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+                                <div className="submission-box" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px' }}>
+                                    <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Counseling Forms</h3>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
+                                                <th style={{ textAlign: 'left', padding: '10px' }}>Student</th>
+                                                <th style={{ textAlign: 'left', padding: '10px' }}>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {window.RECENT_COUNSELING.length > 0 ? window.RECENT_COUNSELING.map(item => (
+                                                <tr key={item.id} style={{ borderBottom: '1px solid #0f172a' }}>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <div style={{ fontWeight: '500' }}>{item.name}</div>
+                                                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>{item.roll}</div>
+                                                    </td>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <a href={item.link} className="view-btn" style={{ background: '#6366f1', color: '#fff', padding: '5px 10px', borderRadius: '4px', fontSize: '12px', textDecoration: 'none' }}>View Form</a>
+                                                    </td>
+                                                </tr>
+                                            )) : <tr><td colSpan="2" style={{ padding: '10px', color: '#94a3b8' }}>No pending forms</td></tr>}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div className="submission-box" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px' }}>
+                                    <h3 style={{ color: '#f43f5e', marginBottom: '1rem' }}>Grievance Forms</h3>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
+                                                <th style={{ textAlign: 'left', padding: '10px' }}>Details</th>
+                                                <th style={{ textAlign: 'left', padding: '10px' }}>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {window.RECENT_GRIEVANCES.length > 0 ? window.RECENT_GRIEVANCES.map(item => (
+                                                <tr key={item.id} style={{ borderBottom: '1px solid #0f172a' }}>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <div style={{ fontWeight: '500' }}>{item.roll}</div>
+                                                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>{item.type}</div>
+                                                    </td>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <a href={item.link} className="view-btn" style={{ background: '#f43f5e', color: '#fff', padding: '5px 10px', borderRadius: '4px', fontSize: '12px', textDecoration: 'none' }}>View Form</a>
+                                                    </td>
+                                                </tr>
+                                            )) : <tr><td colSpan="2" style={{ padding: '10px', color: '#94a3b8' }}>No pending grievances</td></tr>}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        window.addEventListener('load', () => {
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<AdminDashboard />);
+        });
+    </script>
+    {% endverbatim %}
+</body>
+
+</html>

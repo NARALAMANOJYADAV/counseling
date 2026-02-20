@@ -1,0 +1,27 @@
+<div class="django-only" style="display: none;">{% load static %}</div>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You</title>
+    <link rel="stylesheet" href="{% static 'stylesheets/styles.css' %}" id="main-styles">
+    <style>
+        .django-only {
+            display: block;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="title-container">
+        <h1 class="main-title">Thank You!</h1>
+    </div>
+    <div class="container">
+        <p>Your form has been submitted successfully. We will get back to you soon!</p>
+    </div>
+</body>
+
+</html>

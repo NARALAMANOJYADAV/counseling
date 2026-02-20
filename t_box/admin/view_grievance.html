@@ -1,0 +1,115 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>View Grievance - {{ grievance.roll_number }}</title>
+    <link rel="stylesheet" href="{% static 'stylesheets/grievance_style.css' %}">
+    <style>
+        .view-only-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .data-label {
+            font-weight: 600;
+            color: #4b5563;
+            margin-top: 15px;
+            display: block;
+        }
+
+        .data-value {
+            background: #f9fafb;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            margin-top: 5px;
+            min-height: 40px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background: #e11d48;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        .attachment-link {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+
+        .status-text {
+            font-weight: bold;
+        }
+
+        .resolved {
+            color: #059669;
+        }
+
+        .rejected {
+            color: #dc2626;
+        }
+
+        .pending {
+            color: #d97706;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="max-width: 800px; margin: 20px auto; padding: 0 20px;">
+        <a href="javascript:history.back()" class="back-btn">← Back</a>
+        <button onclick="window.print()" class="back-btn"
+            style="background: #10b981; border: none; cursor: pointer; margin-left:10px;">Print Grievance</button>
+    </div>
+
+    <main class="container">
+        <div class="title-container">
+            <h1 class="main-title">GRIEVANCE SUBMISSION DETAILS</h1>
+        </div>
+
+        <div class="view-only-box">
+            <span class="data-label">Student Roll No.</span>
+            <div class="data-value">{{ grievance.roll_number }}</div>
+
+            <span class="data-label">Grievance Type</span>
+            <div class="data-value">{{ grievance.get_grievance_type_display }}</div>
+
+            <span class="data-label">Date of Incident / Submission</span>
+            <div class="data-value">{{ grievance.incident_date }}</div>
+
+            <span class="data-label">Detailed Grievance Message</span>
+            <div class="data-value" style="white-space: pre-wrap;">{{ grievance.description }}</div>
+
+            {% if grievance.attachment %}
+            <span class="data-label">Supporting Document</span>
+            <div class="data-value">
+                <a href="{{ grievance.attachment.url }}" class="attachment-link" target="_blank">View Attached
+                    Document</a>
+            </div>
+            {% endif %}
+
+            <span class="data-label">Current Status</span>
+            <div class="data-value status-text {{ grievance.status|slugify }}">
+                {{ grievance.status }}
+            </div>
+
+            {% if grievance.reply %}
+            <span class="data-label">Official Reply</span>
+            <div class="data-value" style="border-left: 4px solid #6366f1; background: #eef2ff;">
+                {{ grievance.reply }}
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+
+</html>

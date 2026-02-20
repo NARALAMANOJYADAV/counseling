@@ -1,0 +1,144 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Student Counseling & Grievance Portal | NBKRIST</title>
+    <meta name="description"
+        content="Official Student Counseling and Grievance Management Portal for NBKRIST. Submit grievances, request counseling, and track your application status.">
+    <meta name="keywords"
+        content="NBKRIST, NBKR, NBKR Institute of Science and Technology, Student Counseling, Student Grievance, Academic Portal, Vidyanagar, counseling portal, grievance management">
+    <meta name="author" content="NBKRIST Admin">
+
+    <!-- Open Graph for Social Media -->
+    <meta property="og:title" content="Student Counseling & Grievance Portal | NBKRIST">
+    <meta property="og:description"
+        content="Streamlined platform for NBKRIST students to handle counseling and academic grievances.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://counsiling-xvhh.onrender.com/">
+
+    <link rel="stylesheet" href="{% static 'stylesheets/login_style.css' %}" id="main-styles">
+    <style>
+        .local-view-only {
+            display: none;
+        }
+
+        .message-item.success {
+            color: #4ade80;
+        }
+
+        .message-item.error {
+            color: #f87171;
+        }
+
+        .message-item.info {
+            color: #818cf8;
+        }
+    </style>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+
+
+
+<body>
+
+    <div class="container" id="main-container">
+        <div class="curved-shape"></div>
+        <div class="curved-shape2"></div>
+
+        <!-- Login Form -->
+        <div class="form-box Login">
+            <h2 class="animation" style="--D:0; --S:21">Login</h2>
+            <form method="POST" action="{% url 'login' %}" id="login-form">
+                {% csrf_token %}
+                <div class="input-box animation" style="--D:1; --S:22">
+                    <input type="text" name="username" id="login-user" required placeholder=" ">
+                    <label for="login-user">Roll Number</label>
+                    <box-icon type='solid' name='user' color="gray"></box-icon>
+                </div>
+
+                <div class="input-box animation" style="--D:2; --S:23">
+                    <input type="password" name="password" id="login-pass" required placeholder=" ">
+                    <label for="login-pass">Password</label>
+                    <box-icon name='lock-alt' type='solid' color="gray"></box-icon>
+                </div>
+
+                <div class="input-box animation" style="--D:3; --S:24">
+                    <button class="btn" type="submit">Login</button>
+                </div>
+
+                <div class="message-section">
+                    {% if messages %}
+                    <div class="animation"
+                        style="--D:3; --S:24; text-align: center; margin-top: 15px; font-weight: 500;">
+                        {% for message in messages %}
+                        <p
+                            class="message-item {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% else %}info{% endif %}">
+                            {{ message }}
+                        </p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="regi-link animation" style="--D:4; --S:25">
+                    <p>Don't have an account? <br> <a href="#" class="SignUpLink">Sign Up</a></p>
+                </div>
+            </form>
+        </div>
+
+        <div class="info-content Login">
+            <h2 class="animation" style="--D:0; --S:20">WELCOME BACK!</h2>
+            <p class="animation" style="--D:1; --S:21">We are happy to have you with us again. If you need anything, we
+                are here to help.</p>
+        </div>
+
+        <!-- Register Form -->
+        <div class="form-box Register">
+            <h2 class="animation" style="--li:17; --S:0">Register</h2>
+            <form method="POST" action="{% url 'register' %}" id="register-form">
+                {% csrf_token %}
+                <div class="input-box animation" style="--li:18; --S:1">
+                    <input type="text" name="username" id="reg-user" required placeholder=" ">
+                    <label for="reg-user">Roll Number</label>
+                    <box-icon type='solid' name='user' color="gray"></box-icon>
+                </div>
+
+                <div class="input-box animation" style="--li:19; --S:2">
+                    <input type="email" name="email" id="reg-email" required placeholder=" ">
+                    <label for="reg-email">Email (@nbkrist.org)</label>
+                    <box-icon name='envelope' type='solid' color="gray"></box-icon>
+                </div>
+
+                <div class="input-box animation" style="--li:19; --S:3">
+                    <input type="password" name="password" id="reg-pass" required placeholder=" ">
+                    <label for="reg-pass">Password</label>
+                    <box-icon name='lock-alt' type='solid' color="gray"></box-icon>
+                </div>
+
+                <div class="input-box animation" style="--li:20; --S:4">
+                    <button class="btn" type="submit">Register</button>
+                </div>
+
+                <div class="regi-link animation" style="--li:21; --S:5">
+                    <p>Already have an account? <br> <a href="#" class="SignInLink">Sign In</a></p>
+                </div>
+            </form>
+        </div>
+
+        <div class="info-content Register">
+            <h2 class="animation" style="--li:17; --S:0">WELCOME!</h2>
+            <p class="animation" style="--li:18; --S:1">We’re delighted to have you here. If you need any assistance,
+                feel free to reach out.</p>
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+    <script src="{% static 'js/login_script.js' %}?v=6"></script>
+
+</body>
+
+</html>

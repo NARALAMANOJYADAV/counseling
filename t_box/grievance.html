@@ -1,0 +1,65 @@
+<div style="display:none;">{% load static %}</div>
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grievance Management System</title>
+
+    <link rel="stylesheet" href="{% static 'stylesheets/grievance_style.css' %}" id="main-styles">
+    <style>
+        .django-only {
+            display: block;
+        }
+    </style>
+
+
+
+</head>
+
+<body>
+    <div style="max-width: 800px; margin: 0 auto;"><a href="{% url 'dashboard' %}" class="back-btn" id="back-link">←
+            Back to Dashboard</a></div>
+    <main class="container">
+        <div class="title-container">
+            <h1 class="main-title">GRIEVANCE SUBMISSION FORM</h1>
+        </div>
+        <form method="POST" enctype="multipart/form-data" id="grievanceForm">
+            <div class="django-only">{% csrf_token %}</div>
+
+            <div class="form-group"><label for="grievance_roll_no">Student Roll No.</label>
+                <input type="text" id="grievance_roll_no" name="roll_number" readonly value="{{ user.username }}"
+                    style="background-color: #f1f1f1; cursor: not-allowed;">
+            </div>
+            <div><label for="grievance_type" class="block text-sm font-medium text-gray-700">Grievance
+                    Type*</label><select id="grievance_type" name="grievance_type" required
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary-blue focus:border-primary-blue">
+                    <option value="">Select Type</option>
+                    <option value="Academic">Academic (Marks, Syllabus, etc.)</option>
+                    <option value="Facility">Facilities (Infrastructure, Library, etc.)</option>
+                    <option value="Administrative">Administrative (Fee, ID card, etc.)</option>
+                    <option value="Ragging">Ragging / Harassment</option>
+                    <option value="Other">Other</option>
+                </select></div><br>
+            <div class="form-group"><label for="grievance_date">Date of Incident / Submission</label><input type="date"
+                    id="grievance_date" name="incident_date" required value="2025-10-07"></div>
+            <div class="form-group"><label for="grievance_message">Detailed Grievance Message</label><textarea
+                    id="grievance_message" name="description" required
+                    placeholder="Please provide a clear and detailed description of your grievance."></textarea></div>
+            <div class="form-group"><label for="grievance_attachment">Upload Supporting Document
+                    (Optional)</label><input type="file" id="grievance_attachment" name="attachment"
+                    accept=".pdf,.doc,.docx,image/*"></div>
+
+            <div class="form-actions"><button type="submit">Submit Grievance</button></div>
+        </form>
+    </main>
+    <footer class="container"
+        style="margin-top:40px; color:#666; font-size:14px; text-align:center; background: transparent; box-shadow: none;">
+        <hr style="background-color: #666; height: 1px; border: none; margin-bottom: 10px;"><small>Your grievance will
+            be forwarded to the relevant department for action.</small>
+    </footer>
+
+</body>
+
+</html>

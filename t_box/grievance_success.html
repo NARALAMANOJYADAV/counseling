@@ -1,0 +1,49 @@
+<div style="display:none;">{% load static %}</div>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grievance Submitted</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'stylesheets/grievance_success_style.css' %}" id="main-styles">
+    <style>
+        .django-only {
+            display: block;
+        }
+    </style>
+</head>
+
+
+<body>
+    <main class="container">
+        <div class="card">
+            <div class="icon-box">
+                <i class="checkmark">✓</i>
+            </div>
+            <h1>Grievance Submitted!</h1>
+            <p>Your grievance has been successfully submitted.</p>
+            {% if grievance %}
+            <div
+                style="text-align: left; margin: 20px auto; max-width: 80%; padding: 15px; background: #f9f9f9; border-radius: 5px; border-left: 5px solid #e74c3c;">
+                <p><strong>Type:</strong> {{ grievance.get_grievance_type_display }}</p>
+                <p><strong>Date:</strong> {{ grievance.incident_date }}</p>
+                <p><strong>Status:</strong> {{ grievance.status }}</p>
+                <p><strong>Reference ID:</strong> #{{ grievance.id }}</p>
+            </div>
+            {% endif %}
+            <p>You can check the detailed status in your dashboard.</p>
+            <div class="btn-group">
+                <a href="{% url 'dashboard' %}" class="btn dashboard-btn" id="back-link">Back to Dashboard</a>
+                <a href="{% url 'grievance_form' %}" class="btn new-response-btn" id="new-link">New Response</a>
+            </div>
+        </div>
+    </main>
+
+    <footer style="margin-top:40px; color:#ccc; font-size:14px; text-align: center; padding-bottom: 20px;">
+        <small>Counseling app — development mode</small>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,700 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Counseling Form - {{ student.student_name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'stylesheets/styles.css' %}">
+    <style>
+        /* Column widths for Academic Record */
+        .acad-subject {
+            width: 30%;
+        }
+
+        .acad-marks {
+            width: 10%;
+        }
+
+        .acad-result {
+            width: 10%;
+        }
+
+        .acad-year {
+            width: 10%;
+        }
+
+        /* Specific widths for Monthly Attendance labels */
+        .col-label {
+            width: 25% !important;
+            background-color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            table-layout: fixed;
+            /* Force consistent column widths */
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        th,
+        td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 4px;
+        }
+
+        /* Fixed width for the 'Date' column in counseling history */
+        .col-date {
+            width: 120px !important;
+        }
+
+        input,
+        select,
+        textarea {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #1e293b !important;
+            pointer-events: none;
+            width: 100%;
+            box-sizing: border-box;
+            display: block;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background: #6366f1;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        @media print {
+
+            .back-btn,
+            .workflow-actions {
+                display: none;
+            }
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #fde047;
+        }
+
+        .status-approved {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .workflow-actions {
+            margin-top: 5px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .workflow-btn {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            pointer-events: auto !important;
+            transition: opacity 0.2s;
+        }
+
+        .workflow-btn:hover {
+            opacity: 0.8;
+        }
+
+        .btn-approve {
+            background: #10b981;
+        }
+
+        .btn-reject {
+            background: #ef4444;
+        }
+
+        /* Mobile Responsive Styles */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+                background-color: #f1f5f9;
+            }
+
+            .main-container {
+                padding: 15px !important;
+                margin: 10px auto !important;
+                border-radius: 12px !important;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+            }
+
+            .table-responsive {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-bottom: 20px;
+                background: white;
+                border-radius: 8px;
+                padding: 5px;
+            }
+
+            table {
+                min-width: 600px;
+                /* Force scroll on narrow screens */
+                table-layout: auto !important;
+                /* Allow table to breathe on mobile */
+            }
+
+            .workflow-grid {
+                grid-template-columns: 1fr !important;
+                /* Stack cards */
+                gap: 15px !important;
+            }
+
+            .workflow-card {
+                border-right: none !important;
+                border-bottom: 1px solid #f1f5f9;
+                padding: 20px !important;
+            }
+
+            .workflow-card:last-child {
+                border-bottom: none;
+            }
+
+            .final-status-bar {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .status-badge {
+                font-size: 12px;
+                padding: 6px 14px;
+            }
+
+            h1,
+            h2,
+            h3 {
+                font-size: 1.2rem !important;
+            }
+
+            legend {
+                font-size: 1rem !important;
+                padding: 0 10px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div style="max-width: 1100px; margin: 20px auto; padding: 0 20px;">
+        <a href="javascript:history.back()" class="back-btn">← Back</a>
+        <button onclick="window.print()" class="back-btn"
+            style="background: #10b981; border: none; cursor: pointer; margin-left:10px;">Print Form</button>
+    </div>
+
+    <div class="title-container">
+        <h1 class="main-title">Students Counseling Record</h1>
+    </div>
+
+    <div class="main-container"
+        style="max-width: 1100px; margin: 0 auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+        <fieldset>
+            <!-- Table 1: Basic Info -->
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th>Year - Sem</th>
+                        <td><input type="text" value="{{ student.year_sem }}"></td>
+                        <th>Academic Year</th>
+                        <td><input type="text" value="{{ student.academic_year }}"></td>
+                        <td>RTF <input type="checkbox" {% if student.rtf %}checked{% endif %}></td>
+                        <td>MQ <input type="checkbox" {% if student.mq %}checked{% endif %}></td>
+                        <td>Any Other <input type="checkbox" {% if student.any_other %}checked{% endif %}></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th colspan="2">Name of counselor</th>
+                        <td colspan="5"><input type="text" value="{{ student.counselor_name }}"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">Student's Name</th>
+                        <td colspan="5"><input type="text" value="{{ student.student_name }}"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">Father's Name</th>
+                        <td colspan="2"><input type="text" value="{{ student.father_name }}"></td>
+                        <th>Father's Phone</th>
+                        <td colspan="2"><input type="text" value="{{ student.father_phone }}"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">Roll Number</th>
+                        <td colspan="2"><input type="text" value="{{ student.roll_number }}"></td>
+                        <th>Student Phone No</th>
+                        <td colspan="2"><input type="text" value="{{ student.student_phone }}"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">Residence (Hostel)</th>
+                        <td colspan="2"><input type="text" value="{{ student.residence_hostel|default:'' }}"></td>
+                        <th>Day Scholar</th>
+                        <td colspan="2"><input type="text" value="{{ student.residence_days_scholar|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">Names of the close friends</th>
+                        <td colspan="2"><input type="text" value="{{ student.friends_name1|default:'' }}"></td>
+                        <td colspan="3"><input type="text" value="{{ student.friends_roll1|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.friends_name2|default:'' }}"></td>
+                        <td colspan="5"><input type="text" value="{{ student.friends_roll2|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.friends_name3|default:'' }}"></td>
+                        <td colspan="5"><input type="text" value="{{ student.friends_roll3|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">Room Mates Names & Rolls</th>
+                        <td colspan="2"><input type="text" value="{{ student.rm_name1|default:'' }}"></td>
+                        <td colspan="3"><input type="text" value="{{ student.rm_roll1|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.rm_name2|default:'' }}"></td>
+                        <td colspan="5"><input type="text" value="{{ student.rm_roll2|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.rm_name3|default:'' }}"></td>
+                        <td colspan="5"><input type="text" value="{{ student.rm_roll3|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">Department Mates Names & Rolls</th>
+                        <td colspan="2"><input type="text" value="{{ student.dm_name1|default:'' }}"></td>
+                        <td colspan="3"><input type="text" value="{{ student.dm_roll1|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.dm_name2|default:'' }}"></td>
+                        <td colspan="5"><input type="text" value="{{ student.dm_roll2|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.dm_name3|default:'' }}"></td>
+                        <td colspan="5"><input type="text" value="{{ student.dm_roll3|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">Dist. / State level friends Names & Rolls</th>
+                        <td colspan="2"><input type="text" value="{{ student.ds_name1|default:'' }}"></td>
+                        <td colspan="3"><input type="text" value="{{ student.ds_roll1|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.ds_name2|default:'' }}"></td>
+                        <td colspan="5"><input type="text" value="{{ student.ds_roll2|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.ds_name3|default:'' }}"></td>
+                        <td colspan="5"><input type="text" value="{{ student.ds_roll3|default:'' }}"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Table 2: Residence -->
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th colspan="2">Student's Residence</th>
+                        <td colspan="5">
+                            Hostel <input type="checkbox" {% if student.residence_hostel %}checked{% endif %}> /
+                            Days Scholar <input type="checkbox" {% if student.residence_days_scholar %}checked{% endif
+                                %}> /
+                            College Bus <input type="checkbox" {% if student.residence_college_bus %}checked{% endif %}>
+                            /
+                            RTC Bus <input type="checkbox" {% if student.residence_rtc_bus %}checked{% endif %}>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">NBKRIST Hostel Name</th>
+                        <td colspan="2"><input type="text" value="{{ student.hostel_name|default:'' }}"></td>
+                        <th>Room No</th>
+                        <td><input type="text" value="{{ student.room_no|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th rowspan="3">Hostel Roommates</th>
+                        <td style="text-align: center;">1</td>
+                        <td colspan="2"><input type="text" value="{{ student.roommate1|default:'' }}"></td>
+                        <th>Roll No1</th>
+                        <td><input type="text" value="{{ student.roll_no1|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">2</td>
+                        <td colspan="2"><input type="text" value="{{ student.roommate2|default:'' }}"></td>
+                        <th>Roll No2</th>
+                        <td><input type="text" value="{{ student.roll_no2|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">3</td>
+                        <td colspan="2"><input type="text" value="{{ student.roommate3|default:'' }}"></td>
+                        <th>Roll No3</th>
+                        <td><input type="text" value="{{ student.roll_no3|default:'' }}"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Table 3: Transport & DS -->
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th>College Bus Route</th>
+                        <td><input type="text" value="{{ student.bus_route|default:'' }}"></td>
+                        <th colspan="2">BUS NO</th>
+                        <td><input type="text" value="{{ student.bus_no|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th>RTC BUS/Two Wheeler Travel Place</th>
+                        <td colspan="4"><input type="text" value="{{ student.rtc_travel_place|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th>Two Wheeler Make & Number</th>
+                        <td colspan="4"><input type="text" value="{{ student.vehicle_details|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th>Days Scholar Address</th>
+                        <td colspan="4"><input type="text" value="{{ student.day_scholar_address|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <th rowspan="4">Days Scholar Roommates with Roll Numbers</th>
+                        <th colspan="2">Name</th>
+                        <th colspan="2">Roll No</th>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.ds_name1|default:'' }}"></td>
+                        <td colspan="2"><input type="text" value="{{ student.ds_roll1|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.ds_name2|default:'' }}"></td>
+                        <td colspan="2"><input type="text" value="{{ student.ds_roll2|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="text" value="{{ student.ds_name3|default:'' }}"></td>
+                        <td colspan="2"><input type="text" value="{{ student.ds_roll3|default:'' }}"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Table 4: Monthly Analysis -->
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th>Month</th>
+                        <th><input type="text" value="{{ student.month1|default:'' }}"></th>
+                        <th>Follow-up</th>
+                        <th><input type="text" value="{{ student.month2|default:'' }}"></th>
+                        <th>Follow-up</th>
+                        <th><input type="text" value="{{ student.month3|default:'' }}"></th>
+                        <th>Follow-up</th>
+                        <th><input type="text" value="{{ student.month4|default:'' }}"></th>
+                        <th>Follow-up</th>
+                        <th><input type="text" value="{{ student.month5|default:'' }}"></th>
+                        <th>Follow-up</th>
+                    </tr>
+                    <tr>
+                        <td>Classes Conducted</td>
+                        <td><input type="text" value="{{ student.classes_conducted1|default:'' }}"></td>
+                        <td rowspan="4"><textarea rows="4">{{ student.followup1|default:'' }}</textarea></td>
+                        <td><input type="text" value="{{ student.classes_conducted2|default:'' }}"></td>
+                        <td rowspan="4"><textarea rows="4">{{ student.followup2|default:'' }}</textarea></td>
+                        <td><input type="text" value="{{ student.classes_conducted3|default:'' }}"></td>
+                        <td rowspan="4"><textarea rows="4">{{ student.followup3|default:'' }}</textarea></td>
+                        <td><input type="text" value="{{ student.classes_conducted4|default:'' }}"></td>
+                        <td rowspan="4"><textarea rows="4">{{ student.followup4|default:'' }}</textarea></td>
+                        <td><input type="text" value="{{ student.classes_conducted5|default:'' }}"></td>
+                        <td rowspan="4"><textarea rows="4">{{ student.followup5|default:'' }}</textarea></td>
+                    </tr>
+                </table>
+            </div>
+            <td><input type="text" value="{{ student.classes_conducted5|default:'' }}"></td>
+            <td rowspan="4"><textarea rows="4">{{ student.followup5|default:'' }}</textarea></td>
+            </tr>
+            <tr>
+                <td>Classes Attended</td>
+                <td><input type="text" value="{{ student.classes_attended1|default:'' }}"></td>
+                <td><input type="text" value="{{ student.classes_attended2|default:'' }}"></td>
+                <td><input type="text" value="{{ student.classes_attended3|default:'' }}"></td>
+                <td><input type="text" value="{{ student.classes_attended4|default:'' }}"></td>
+                <td><input type="text" value="{{ student.classes_attended5|default:'' }}"></td>
+            </tr>
+            <tr>
+                <td>% Attendance</td>
+                <td><input type="text" value="{{ student.attendance_percent1|default:'' }}"></td>
+                <td><input type="text" value="{{ student.attendance_percent2|default:'' }}"></td>
+                <td><input type="text" value="{{ student.attendance_percent3|default:'' }}"></td>
+                <td><input type="text" value="{{ student.attendance_percent4|default:'' }}"></td>
+                <td><input type="text" value="{{ student.attendance_percent5|default:'' }}"></td>
+            </tr>
+            <tr>
+                <td>Monthly Letter(Yes/No)</td>
+                <td><input type="text" value="{{ student.monthly_letter1|default:'' }}"></td>
+                <td><input type="text" value="{{ student.monthly_letter2|default:'' }}"></td>
+                <td><input type="text" value="{{ student.monthly_letter3|default:'' }}"></td>
+                <td><input type="text" value="{{ student.monthly_letter4|default:'' }}"></td>
+                <td><input type="text" value="{{ student.monthly_letter5|default:'' }}"></td>
+            </tr>
+            </table>
+
+            <!-- Table 5: Academic Record -->
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th colspan="8">ACADEMIC RECORD</th>
+                    </tr>
+                    <tr>
+                        <th class="acad-subject">Subject</th>
+                        <th class="acad-marks">I Mid</th>
+                        <th class="acad-marks">II Mid</th>
+                        <th class="acad-marks">Sessional Marks</th>
+                        <th class="acad-marks">End Sem. Marks</th>
+                        <th class="acad-marks">Total Marks</th>
+                        <th class="acad-result">Result (P/F)</th>
+                        <th class="acad-year">Year of Pass</th>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="{{ student.subject1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid1_1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid2_1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.sessional1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.endsem1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.total1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.result1|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.pass_year1|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="{{ student.subject2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid1_2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid2_2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.sessional2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.endsem2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.total2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.result2|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.pass_year2|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="{{ student.subject3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid1_3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid2_3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.sessional3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.endsem3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.total3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.result3|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.pass_year3|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="{{ student.subject4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid1_4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid2_4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.sessional4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.endsem4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.total4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.result4|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.pass_year4|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="{{ student.subject5|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid1_5|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.mid2_5|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.sessional5|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.endsem5|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.total5|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.result5|default:'' }}"></td>
+                        <td><input type="text" value="{{ student.pass_year5|default:'' }}"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Table 6: Counseling History -->
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-date">Date</th>
+                            <th colspan="7">Description of Counseling 'with signatures of Student,counselor and HOD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date1|default:'' }}">
+                            </td>
+                            <td colspan="7"><textarea
+                                    rows="2">{{ student.counseling_description1|default:'' }}</textarea>
+                            </td>
+                        </tr>
+                        <tr style="background: #f1f5f9;">
+                            <th class="col-date">Date</th>
+                            <th colspan="7">Prizes, Participations, Disciplinary Matters, etc.</th>
+                        </tr>
+                        <tr>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date2|default:'' }}">
+                            </td>
+                            <td colspan="7"><textarea
+                                    rows="2">{{ student.prizes_participations1|default:'' }}</textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date3|default:'' }}">
+                            </td>
+                            <td colspan="7"><textarea
+                                    rows="2">{{ student.prizes_participations2|default:'' }}</textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date4|default:'' }}">
+                            </td>
+                            <td colspan="7"><textarea
+                                    rows="2">{{ student.prizes_participations3|default:'' }}</textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date5|default:'' }}">
+                            </td>
+                            <td colspan="7"><textarea
+                                    rows="2">{{ student.prizes_participations4|default:'' }}</textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-date"><input type="text" value=""></td>
+                            <td colspan="7"><textarea
+                                    rows="2">{{ student.prizes_participations5|default:'' }}</textarea>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table 7: Approval Workflow REDESIGNED -->
+            <div
+                style="margin-top: 40px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <div
+                    style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 16px; text-align: center;">
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: 1px;">OFFICIAL APPROVAL
+                        WORKFLOW</h3>
+                </div>
+
+                <div class="workflow-grid"
+                    style="display: grid; grid-template-columns: repeat(4, 1fr); background: white;">
+                    <!-- Counselor Card -->
+                    <div class="workflow-card"
+                        style="padding: 24px; border-right: 1px solid #f1f5f9; text-align: center;">
+                        <h4 style="margin: 0 0 12px 0; color: #64748b; font-size: 14px; font-weight: 600;">COUNSELOR
+                        </h4>
+                        <div style="margin-bottom: 16px;">
+                            <span class="status-badge status-{{ student.counselor_approval|lower|default:'pending' }}">
+                                {{ student.counselor_approval|default:'Pending' }}
+                            </span>
+                        </div>
+                        {% if role == 'COUNSELOR' or user.is_superuser %}
+                        <form method="POST" class="workflow-actions">
+                            {% csrf_token %}
+                            <input type="hidden" name="target_role" value="COUNSELOR">
+                            <button name="action" value="Approved" class="workflow-btn btn-approve">Approve</button>
+                            <button name="action" value="Rejected" class="workflow-btn btn-reject">Reject</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- HOD Card -->
+                    <div style="padding: 24px; border-right: 1px solid #f1f5f9; text-align: center;">
+                        <h4 style="margin: 0 0 12px 0; color: #64748b; font-size: 14px; font-weight: 600;">HOD</h4>
+                        <div style="margin-bottom: 16px;">
+                            <span class="status-badge status-{{ student.hod_approval|lower|default:'pending' }}">
+                                {{ student.hod_approval|default:'Pending' }}
+                            </span>
+                        </div>
+                        {% if role == 'HOD' or user.is_superuser %}
+                        <form method="POST" class="workflow-actions">
+                            {% csrf_token %}
+                            <input type="hidden" name="target_role" value="HOD">
+                            <button name="action" value="Approved" class="workflow-btn btn-approve">Approve</button>
+                            <button name="action" value="Rejected" class="workflow-btn btn-reject">Reject</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Incharge Card -->
+                    <div style="padding: 24px; border-right: 1px solid #f1f5f9; text-align: center;">
+                        <h4 style="margin: 0 0 12px 0; color: #64748b; font-size: 14px; font-weight: 600;">INCHARGE</h4>
+                        <div style="margin-bottom: 16px;">
+                            <span class="status-badge status-{{ student.incharge_approval|lower|default:'pending' }}">
+                                {{ student.incharge_approval|default:'Pending' }}
+                            </span>
+                        </div>
+                        {% if role == 'INCHARGE' or user.is_superuser %}
+                        <form method="POST" class="workflow-actions">
+                            {% csrf_token %}
+                            <input type="hidden" name="target_role" value="INCHARGE">
+                            <button name="action" value="Approved" class="workflow-btn btn-approve">Approve</button>
+                            <button name="action" value="Rejected" class="workflow-btn btn-reject">Reject</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Director Card -->
+                    <div style="padding: 24px; text-align: center;">
+                        <h4 style="margin: 0 0 12px 0; color: #64748b; font-size: 14px; font-weight: 600;">DIRECTOR</h4>
+                        <div style="margin-bottom: 16px;">
+                            <span class="status-badge status-{{ student.director_approval|lower|default:'pending' }}">
+                                {{ student.director_approval|default:'Pending' }}
+                            </span>
+                        </div>
+                        {% if role == 'DIRECTOR' or user.is_superuser %}
+                        <form method="POST" class="workflow-actions">
+                            {% csrf_token %}
+                            <input type="hidden" name="target_role" value="DIRECTOR">
+                            <button name="action" value="Approved" class="workflow-btn btn-approve">Approve</button>
+                            <button name="action" value="Rejected" class="workflow-btn btn-reject">Reject</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="final-status-bar"
+                    style="background: #f8fafc; padding: 20px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="color: #64748b; font-weight: 700; font-size: 16px;">FINAL APPLICATION STATUS:</div>
+                    <div>
+                        <span class="status-badge status-{{ student.approval_status|lower|default:'pending' }}"
+                            style="font-size: 20px; padding: 12px 32px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            {{ student.approval_status|default:'PENDING' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+</body>
+
+</html>
