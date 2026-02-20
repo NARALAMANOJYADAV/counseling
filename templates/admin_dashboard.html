@@ -118,13 +118,7 @@
             'logout': "{% url 'logout' %}"
         };
 
-        window.MESSAGES = [
-            {% if messages %}
-        {% for message in messages %}
-        { text: "{{ message|escapejs }}", tags: "{{ message.tags }}" },
-        {% endfor %}
-        {% endif %}
-        ];
+        window.MESSAGES = JSON.parse('[{% for m in messages %}{"text":"{{ m|escapejs }}","tags":"{{ m.tags }}"}{% if not forloop.last %},{% endif %}{% endfor %}]');
 
         // Auto-refresh every 30 seconds
         setInterval(() => window.location.reload(), 30000);
