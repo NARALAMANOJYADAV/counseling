@@ -12,7 +12,7 @@ class GrievanceAdmin(admin.ModelAdmin):
     def view_form_button(self, obj):
         from django.urls import reverse
         url = reverse('admin_view_grievance', args=[obj.pk])
-        return format_html('<a class="button" href="{}" target="_blank" style="background: #e11d48; color: white;">View Form</a>', url)
+        return format_html('<a class="button" href="{}" style="background: #e11d48; color: white;">View Form</a>', url)
     
     view_form_button.short_description = 'Actions'
 
@@ -193,7 +193,7 @@ class StudentCounselingAdmin(admin.ModelAdmin):
     def view_form_button(self, obj):
         from django.urls import reverse
         url = reverse('admin_view_counseling', args=[obj.pk])
-        return format_html('<a class="button" href="{}" target="_blank" style="background: #6366f1; color: white;">View Form</a>', url)
+        return format_html('<a class="button" href="{}" style="background: #6366f1; color: white;">View Form</a>', url)
     
     view_form_button.short_description = 'Actions'
 
