@@ -65,7 +65,10 @@
                     <box-icon name='lock-alt' type='solid' color="gray"></box-icon>
                 </div>
 
-                <div class="input-box animation" style="--D:3; --S:24">
+                <div class="input-box animation" style="--D:3; --S:24; margin-bottom: 5px;">
+                    <div style="text-align: right; width: 100%; margin-top: 5px; margin-bottom: 15px;">
+                        <a href="{% url 'password_reset' %}" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 500;">Forgot Password?</a>
+                    </div>
                     <button class="btn" type="submit">Login</button>
                 </div>
 
