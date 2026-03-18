@@ -74,6 +74,12 @@ def admin_dashboard_view(request):
         recent_counseling = StudentCounseling.objects.filter(last_submission_date__isnull=False).order_by('-last_submission_date')[:10]
         recent_grievances = Grievance.objects.all().order_by('-submission_date')[:10]
 
+    all_students_json = '[]'
+    if request.user.is_superuser:
+        from django.contrib.auth.models import User
+        students = User.objects.filter(is_staff=False, is_superuser=False).values('id', 'username', 'email')
+        all_students_json = json.dumps(list(students))
+
     context = {
         'total_students': total_students,
         'pending_counseling': pending_counseling,
@@ -86,8 +92,160 @@ def admin_dashboard_view(request):
             {'id': g.id, 'roll': g.roll_number, 'type': g.grievance_type, 'link': f"/view-form/grievance/{g.id}/", 'status': g.status}
             for g in recent_grievances
         ]),
+        'all_students_json': all_students_json,
+        'is_superuser': request.user.is_superuser,
     }
     return render(request, 'admin_dashboard.html', context)
+
+@login_required
+def admin_users_view(request):
+    if not request.user.is_superuser:
+        return redirect('dashboard')
+    
+    from django.contrib.auth.models import User
+    from .models import StudentCounseling
+    import json
+    
+    # Capture filters
+    ay_filter = request.GET.get('academic_year', '')
+    ys_filter = request.GET.get('year_sem', '')
+    att_filter = request.GET.get('attendance_search', '').strip()
+    
+    # 1. Fetch all registered users
+    users_qs = User.objects.all()
+    
+    # 2. Pre-filter StudentCounseling records based on criteria
+    # Get the single most recent active record for each roll number
+    all_qs = StudentCounseling.objects.all().order_by('roll_number', '-last_submission_date')
+    latest_ids = []
+    seen = set()
+    for sc in all_qs:
+        if sc.roll_number and sc.roll_number not in seen:
+            seen.add(sc.roll_number)
+            latest_ids.append(sc.id)
+            
+    sc_qs = StudentCounseling.objects.filter(id__in=latest_ids)
+    
+    if ay_filter:
+        sc_qs = sc_qs.filter(academic_year__iexact=ay_filter.strip())
+    if ys_filter:
+        sc_qs = sc_qs.filter(year_sem__iexact=ys_filter.strip())
+        
+    if att_filter:
+        try:
+            # Clean up query
+            search_val = att_filter.replace('%', '').strip()
+            att_query = float(search_val)
+            match_rolls = []
+            for sc in sc_qs:
+                for i in range(1, 6):
+                    val = getattr(sc, f'attendance_percent{i}', None)
+                    if val:
+                        try:
+                            # Clean up DB value
+                            val_clean = str(val).replace('%', '').strip()
+                            if abs(float(val_clean) - att_query) < 1.0:
+                                match_rolls.append(sc.roll_number)
+                                break
+                        except (ValueError, TypeError): continue
+            sc_qs = sc_qs.filter(roll_number__in=match_rolls)
+        except ValueError:
+            pass
+            
+    filtered_student_rolls = set(sc_qs.values_list('roll_number', flat=True))
+    
+    users_list = users_qs.values('id', 'username', 'email', 'is_staff', 'is_superuser')
+    processed_users = []
+    registered_usernames = set()
+    
+    for u in users_list:
+        role = "Student"
+        is_student = True
+        if u['is_superuser']:
+            role = "Super Admin"
+            is_student = False
+        elif u['is_staff']:
+            un = u['username'].upper()
+            if 'COUNSELOR' in un: role = "Counselor"
+            elif 'HOD' in un: role = "HOD"
+            elif 'INCHARGE' in un: role = "Incharge"
+            elif 'DIRECTOR' in un: role = "Director"
+            else: role = "Staff member"
+            is_student = False
+        
+        # Apply filtering: If it's a student, they must be in the filtered_student_rolls
+        # If no filters are active (ay, ys, att all empty), we show all.
+        if (ay_filter or ys_filter or att_filter) and is_student:
+            if u['username'] not in filtered_student_rolls:
+                continue
+        
+        u['role_label'] = role
+        processed_users.append(u)
+        registered_usernames.add(u['username'])
+
+    # 3. Handle manual records that match the filters
+    all_manual = sc_qs.exclude(roll_number__in=registered_usernames).values('roll_number', 'student_name', 'email', 'added_by_role')
+    for record in all_manual:
+        identifier = record['roll_number'] or record['student_name']
+        source_role = record['added_by_role'] or 'Add by Admin'
+        processed_users.append({
+            'id': f"manual_{identifier}", 
+            'username': identifier,
+            'email': record['email'],
+            'role_label': f"Student({source_role})",
+            'is_staff': False,
+            'is_superuser': False,
+            'is_manual': True
+        })
+
+    # Options for filters
+    years = list(StudentCounseling.objects.values_list('academic_year', flat=True).distinct().order_by('academic_year'))
+    sems = list(StudentCounseling.objects.values_list('year_sem', flat=True).distinct().order_by('year_sem'))
+
+    context = {
+        'all_students_json': json.dumps(processed_users),
+        'is_superuser': request.user.is_superuser,
+        'filter_data': json.dumps({
+            'years': [y for y in years if y],
+            'sems': [s for s in sems if s],
+            'current': {
+                'ay': ay_filter,
+                'ys': ys_filter,
+                'att': att_filter
+            }
+        })
+    }
+    return render(request, 'admin_users.html', context)
+
+@login_required
+def delete_student_view(request, user_id):
+    if not request.user.is_superuser:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        from django.contrib.auth.models import User
+        from .models import StudentCounseling, Grievance
+        
+        user_id_str = str(user_id)
+        if user_id_str.startswith('manual_'):
+            # Manual record deletion (no User account)
+            roll = user_id_str.replace('manual_', '')
+            StudentCounseling.objects.filter(roll_number=roll).delete()
+            messages.success(request, f"Manual student record {roll} removed from registry.")
+        else:
+            # Standard User account and associated data deletion
+            try:
+                user = User.objects.get(id=user_id)
+                username = user.username
+                # Clean up all related student data
+                StudentCounseling.objects.filter(roll_number=username).delete()
+                Grievance.objects.filter(roll_number=username).delete()
+                user.delete()
+                messages.success(request, f"User {username} and all records deleted successfully.")
+            except (User.DoesNotExist, ValueError):
+                messages.error(request, "User or record not found.")
+                
+    return redirect('admin_users')
 
 def counseling_form_view(request):
     if not request.user.is_authenticated:
@@ -134,7 +292,11 @@ def counseling_form_view(request):
         if student:
             form = StudentCounselingForm(instance=student)
         else:
-            form = StudentCounselingForm(initial={'student_name': request.user.username})
+            form = StudentCounselingForm(initial={
+                'roll_number': request.user.username,
+                'email': request.user.email,
+                'student_name': '' # Leave blank for student to fill their actual name
+            })
 
     return render(request, 'student_counseling.html', {'form': form})
 

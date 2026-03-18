@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from .models import StudentCounseling, Grievance
 
 @admin.register(Grievance)
@@ -8,8 +9,69 @@ class GrievanceAdmin(admin.ModelAdmin):
     list_filter = ['status', 'grievance_type', 'counselor_approval', 'hod_approval', 'incharge_approval', 'director_approval']
     search_fields = ['roll_number', 'description']
     ordering = ['-submission_date']
+    actions = ['approve_grievance', 'reject_grievance']
+
+    @admin.action(description='Approve selected grievances (Set to Resolved)')
+    def approve_grievance(self, request, queryset):
+        queryset.update(status='Resolved')
+
+    @admin.action(description='Reject selected grievances (Set to Rejected)')
+    def reject_grievance(self, request, queryset):
+        queryset.update(status='Rejected')
+
+    # Django's native ChangeList automatically handles list_filter fields
+    # when they use the '__exact' suffix in the GET request.
+    # We do NOT need to override get_queryset for these standard fields.
+    def get_queryset(self, request):
+        return super().get_queryset(request).distinct()
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        
+        # Determine the currently active filters to persist UI state.
+        status_val = (request.GET.get('status__exact') or '').strip()
+        type_val = (request.GET.get('grievance_type__exact') or '').strip()
+        q_val = request.GET.get('q', '')
+        
+        from .models import Grievance
+        types = Grievance.objects.values_list('grievance_type', flat=True).distinct().order_by('grievance_type')
+
+        type_options = [format_html('<option value="" {}>All Types</option>', 'selected' if not type_val else '')]
+        for t in types:
+            if not t: continue
+            type_options.append(format_html('<option value="{}" {}>{}</option>', t, 'selected' if type_val == t else '', t))
+            
+        status_options = [format_html('<option value="" {}>All Statuses</option>', 'selected' if not status_val else '')]
+        for s in ['Pending', 'In Progress', 'Resolved', 'Rejected']:
+            status_options.append(format_html('<option value="{}" {}>{}</option>', s, 'selected' if status_val == s else '', s))
+
+        # IMPORTANT: The select names MUST have the "__exact" suffix.
+        # If they don't, Django's native Search Bar and Pagination will consider them
+        # invalid parameters and permanently delete them from the URL when you search.
+        extra_context['custom_search_form'] = format_html("""
+            <div style="background: #fff; padding: 15px; margin-bottom: 20px; border: 1px solid #ccc; display: flex; align-items: center;">
+                <form action="." method="get" style="display: flex; gap: 15px; align-items: center; width: 100%; flex-wrap: wrap;">
+                    <input type="hidden" name="q" value="{}">
+                    <div style="display:flex; align-items:center;">
+                        <label style="margin-right: 5px; font-weight:bold;">Grievance Type:</label>
+                        <select name="grievance_type__exact" style="padding: 4px; border: 1px solid #ccc;">{}</select>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <label style="margin-right: 5px; font-weight:bold;">Status:</label>
+                        <select name="status__exact" style="padding: 4px; border: 1px solid #ccc;">{}</select>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <input type="submit" value="Apply Filters" style="padding: 6px 15px; background:#417690; color:#fff; border:none; border-radius:3px; cursor:pointer;">
+                        <a href="?" style="margin-left:15px; color:#ba2121; text-decoration:none; font-weight:bold;">Clear filters</a>
+                    </div>
+                </form>
+            </div>
+        """, q_val, mark_safe("".join(type_options)), mark_safe("".join(status_options)))
+        return super().changelist_view(request, extra_context=extra_context)
 
     def view_form_button(self, obj):
+        if not obj or not obj.pk:
+            return format_html('<span>(Save to view form)</span>')
         from django.urls import reverse
         url = reverse('admin_view_grievance', args=[obj.pk])
         return format_html('<a class="button" href="{}" style="background: #e11d48; color: white;">View Form</a>', url)
@@ -54,6 +116,19 @@ class GrievanceAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return request.user.is_superuser
 
+class AttendanceSearchFilter(admin.SimpleListFilter):
+    title = 'Attendance'
+    parameter_name = 'attendance_search'
+    template = 'admin/filter.html'
+
+    def lookups(self, request, model_admin):
+        # Hide from sidebar
+        return ()
+
+    def queryset(self, request, queryset):
+        # Allow get_queryset to handle the actual computation
+        return queryset
+
 @admin.register(StudentCounseling)
 class StudentCounselingAdmin(admin.ModelAdmin):
     class Media:
@@ -66,7 +141,7 @@ class StudentCounselingAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         'academic_year', 'year_sem', 'approval_status', 'counselor_name', 
-        'residence_hostel', 'residence_days_scholar',
+        'residence_hostel', 'residence_days_scholar', AttendanceSearchFilter,
         'counselor_approval', 'hod_approval', 'incharge_approval', 'director_approval'
     ]
 
@@ -74,6 +149,34 @@ class StudentCounselingAdmin(admin.ModelAdmin):
         'student_name', 'roll_number', 'counselor_name', 'email', 'student_phone', 'father_phone',
         'subject1', 'subject2', 'subject3', 'subject4', 'subject5',
     ]
+    
+    actions = ['approve_counseling', 'reject_counseling']
+
+    def save_model(self, request, obj, form, change):
+        # Automatically tag which role added the record
+        if not obj.pk:
+            un = request.user.username.upper()
+            if request.user.is_superuser:
+                obj.added_by_role = "Add by Superadmin"
+            elif 'COUNSELOR' in un:
+                obj.added_by_role = "Add by Counselor"
+            elif 'HOD' in un:
+                obj.added_by_role = "Add by HOD"
+            elif 'INCHARGE' in un:
+                obj.added_by_role = "Add by Incharge"
+            elif 'DIRECTOR' in un:
+                obj.added_by_role = "Add by Director"
+            else:
+                obj.added_by_role = "Add by Admin Staff"
+        super().save_model(request, obj, form, change)
+
+    @admin.action(description='Approve selected student counselings')
+    def approve_counseling(self, request, queryset):
+        queryset.update(approval_status='Approved')
+
+    @admin.action(description='Reject selected student counselings')
+    def reject_counseling(self, request, queryset):
+        queryset.update(approval_status='Rejected')
 
     fieldsets = (
         ('Basic Information', {
@@ -191,6 +294,8 @@ class StudentCounselingAdmin(admin.ModelAdmin):
     )
 
     def view_form_button(self, obj):
+        if not obj or not obj.pk:
+            return format_html('<span>(Save to view form)</span>')
         from django.urls import reverse
         url = reverse('admin_view_counseling', args=[obj.pk])
         return format_html('<a class="button" href="{}" style="background: #6366f1; color: white;">View Form</a>', url)
@@ -227,45 +332,119 @@ class StudentCounselingAdmin(admin.ModelAdmin):
         return request.user.is_superuser
 
     def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        attendance_search = request.GET.get('attendance_search', '').strip()
+        qs = super().get_queryset(request)
+        
+        # 1. Strictly isolate the query to the single most recent active record per student
+        latest_ids = []
+        seen = set()
+        for sc in qs.order_by('roll_number', '-last_submission_date'):
+            if sc.roll_number and sc.roll_number not in seen:
+                seen.add(sc.roll_number)
+                latest_ids.append(sc.id)
+        queryset = qs.filter(id__in=latest_ids)
+        
+        # Explicitly filter by our custom top-bar parameters
+        ay = (request.GET.get('academic_year') or request.GET.get('academic_year__exact') or '').strip()
+        ys = (request.GET.get('year_sem') or request.GET.get('year_sem__exact') or '').strip()
+        st = (request.GET.get('approval_status') or request.GET.get('approval_status__exact') or '').strip()
+        
+        if ay:
+            queryset = queryset.filter(academic_year__iexact=ay)
+        if ys:
+            queryset = queryset.filter(year_sem__iexact=ys)
+        if st:
+            queryset = queryset.filter(approval_status__iexact=st)
 
-        # Store for UI form
-        self.attendance_search = attendance_search
+        attendance_search = request.GET.get('attendance_search', '').strip()
 
         if attendance_search:
             try:
-                attendance_val = float(attendance_search)
+                # Same cleanup for the user's initial search query
+                search_val = attendance_search.replace('%', '').strip()
+                attendance_query = float(search_val)
                 filtered_ids = []
                 for student in queryset:
-                    latest_attendance = None
-                    for i in reversed(range(1, 6)):
+                    matches = False
+                    for i in range(1, 6):
                         att = getattr(student, f'attendance_percent{i}', None)
-                        if att is not None:
-                            latest_attendance = float(att)
-                            break
-                    if latest_attendance is not None and abs(latest_attendance - attendance_val) < 0.05:
+                        if att:
+                            try:
+                                # Remove % signs from DB values so python can actually convert it to a float
+                                att_clean = str(att).replace('%', '').strip()
+                                val_f = float(att_clean)
+                                if abs(val_f - attendance_query) < 1.0:
+                                    matches = True
+                                    break
+                            except (ValueError, TypeError): continue
+                    if matches:
                         filtered_ids.append(student.id)
+                
                 queryset = queryset.filter(id__in=filtered_ids)
             except ValueError:
-                pass  # Ignore if input is not a valid float
-
+                pass
         return queryset
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
 
-        # Add attendance search UI to top right
-        extra_context['attendance_search_form'] = format_html("""
-            <div style="float:right;margin:10px 20px;">
-                <form method="get">
-                    <input type="text" name="attendance_search" value="{}" placeholder="Search by Attendance">
-                    <input type="submit" value="Search">
-                    <a href="?" style="margin-left:10px;">Clear</a>
+        # Capture ALL possible parameter variations from URL to ensure UI stays persistent
+        ay_val = request.GET.get('academic_year') or request.GET.get('academic_year__exact') or ''
+        ys_val = request.GET.get('year_sem') or request.GET.get('year_sem__exact') or ''
+        status_val = request.GET.get('approval_status') or request.GET.get('approval_status__exact') or ''
+        att_val = request.GET.get('attendance_search', '')
+        q_val = request.GET.get('q', '')
+
+        from .models import StudentCounseling
+        years = StudentCounseling.objects.values_list('academic_year', flat=True).distinct().order_by('academic_year')
+        sems = StudentCounseling.objects.values_list('year_sem', flat=True).distinct().order_by('year_sem')
+
+        # Build options with persistent selection
+        ay_options = [format_html('<option value="" {}>All</option>', 'selected' if not ay_val else '')]
+        for y in years:
+            if not y: continue
+            selected = 'selected' if ay_val == y else ''
+            ay_options.append(format_html('<option value="{}" {}>{}</option>', y, selected, y))
+            
+        ys_options = [format_html('<option value="" {}>All</option>', 'selected' if not ys_val else '')]
+        for y in sems:
+            if not y: continue
+            selected = 'selected' if ys_val == y else ''
+            ys_options.append(format_html('<option value="{}" {}>{}</option>', y, selected, y))
+            
+        status_options = [format_html('<option value="" {}>All Statuses</option>', 'selected' if not status_val else '')]
+        for s in ['Pending', 'Approved', 'Rejected']:
+            selected = 'selected' if status_val == s else ''
+            status_options.append(format_html('<option value="{}" {}>{}</option>', s, selected, s))
+
+        extra_context['custom_search_form'] = format_html("""
+            <div style="background: #fff; padding: 15px; margin-bottom: 20px; border: 1px solid #ccc;">
+                <form action="." method="get" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div style="display:flex; align-items:center;">
+                        <label style="margin-right: 5px; font-weight:bold;">Academic Year:</label>
+                        <select name="academic_year__exact" style="padding: 4px; border: 1px solid #ccc;">{}</select>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <label style="margin-right: 5px; font-weight:bold;">Year of study:</label>
+                        <select name="year_sem__exact" style="padding: 4px; border: 1px solid #ccc;">{}</select>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <label style="margin-right: 5px; font-weight:bold;">Status:</label>
+                        <select name="approval_status__exact" style="padding: 4px; border: 1px solid #ccc;">{}</select>
+                    </div>
+                    <div style="display:flex; align-items:center; border-left: 1px solid #ddd; padding-left: 15px;">
+                        <label style="margin-right: 5px; font-weight:bold;">Attendance %:</label>
+                        <input type="text" name="attendance_search" value="{}" placeholder="e.g. 75" style="padding: 4px; width: 60px; border: 1px solid #ccc;">
+                    </div>
+                    
+                    <input type="hidden" name="q" value="{}">
+                    
+                    <div style="display:flex; align-items:center;">
+                        <input type="submit" value="Apply Filters" style="padding: 6px 15px; background:#417690; color:#fff; border:none; border-radius:3px; cursor:pointer; font-weight:bold;">
+                        <a href="?" style="margin-left:15px; color:#ba2121; text-decoration:none; font-size:13px;">Clear all</a>
+                    </div>
                 </form>
-                <small style="color:gray;">Matches students with latest attendance ≈ entered value (±0.05)</small>
             </div>
-        """, self.attendance_search if hasattr(self, 'attendance_search') else '')
+        """, mark_safe("".join(ay_options)), mark_safe("".join(ys_options)), mark_safe("".join(status_options)), att_val, q_val or '')
 
         # Subject search-based pass/fail summary
         search_query = request.GET.get('q', '')

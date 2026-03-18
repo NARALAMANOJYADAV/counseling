@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<div style="display:none;">{% load static %}</div>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Directory | Admin Portal</title>
+
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles from Dashboard -->
+    <link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
+
+    <!-- React & Babel Standalone -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Boxicons -->
+    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+</head>
+
+<body style="background: #0f172a; color: #f8fafc; font-family: 'Outfit', sans-serif;">
+    <div id="root"></div>
+
+    <script>
+        window.CUR_USER = "{{ user.username|default:'Admin' }}";
+        window.ALL_STUDENTS = JSON.parse('{{ all_students_json|escapejs|default:"[]" }}');
+        window.IS_SUPERUSER = "{{ is_superuser }}" === "True";
+        
+        window.FILTER_DATA = JSON.parse('{{ filter_data|escapejs|default:"{}" }}');
+        
+
+        window.URLS = {
+            'dashboard': "{% url 'admin_dashboard' %}",
+            'counseling': "/admin/counseling/studentcounseling/",
+            'grievance': "/admin/counseling/grievance/",
+            'users_admin': "/admin/auth/user/",
+            'logout': "{% url 'logout' %}"
+        };
+    </script>
+
+    {% verbatim %}
+    <script type="text/babel">
+        const getRoleColor = (role) => {
+            switch (role) {
+                case 'Super Admin': return '#ef4444';
+                case 'Counselor': return '#10b981';
+                case 'HOD': return '#f59e0b';
+                case 'Incharge': return '#8b5cf6';
+                case 'Director': return '#ec4899';
+                case 'Staff member': return '#64748b';
+                default: return '#3b82f6';
+            }
+        };
+
+        const FilterBar = () => {
+            const fd = window.FILTER_DATA;
+            const years = fd.years || [];
+            const sems = fd.sems || [];
+            const current = fd.current || {};
+
+            return (
+                <div style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <form action="." method="GET" style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Academic Year</label>
+                            <select name="academic_year" defaultValue={current.ay} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '120px' }}>
+                                <option value="">All Years</option>
+                                {years.map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Year of Study</label>
+                            <select name="year_sem" defaultValue={current.ys} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '150px' }}>
+                                <option value="">All Semesters</option>
+                                {sems.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Attendance % (Approx)</label>
+                            <input type="text" name="attendance_search" defaultValue={current.att} placeholder="e.g. 75" style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', width: '100px' }} />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', alignSelf: 'flex-end', marginTop: '5px' }}>
+                            <button type="submit" style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
+                                Apply Filters
+                            </button>
+                            <a href="?" style={{ color: '#ef4444', textDecoration: 'none', fontSize: '13px', display: 'flex', alignItems: 'center' }}>Clear All</a>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+
+        const UserDirectoryPage = () => {
+            return (
+                <div className="dashboard-layout">
+                    <aside className="sidebar">
+                        <div className="logo">
+                            <box-icon name='user-detail' type='solid' color='#818cf8'></box-icon>
+                            <span>USER MGMT</span>
+                        </div>
+
+                        <nav className="nav-links">
+                            <div className="nav-item">
+                                <a href={window.URLS['dashboard']} className="nav-link">
+                                    <box-icon name='dashboard' color="#94a3b8"></box-icon>
+                                    <span>Home</span>
+                                </a>
+                            </div>
+                            <div className="nav-item">
+                                <a href={window.URLS['counseling']} className="nav-link">
+                                    <box-icon name='list-ul' color="#94a3b8"></box-icon>
+                                    <span>Approvals</span>
+                                </a>
+                            </div>
+                            <div className="nav-item">
+                                <a href="#" className="nav-link active">
+                                    <box-icon name='group' type='solid' color="white"></box-icon>
+                                    <span>Users Registry</span>
+                                </a>
+                            </div>
+
+                            <div className="nav-item logout-item">
+                                <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
+                                    <box-icon name='log-out' color="#ef4444"></box-icon>
+                                    <span>Exit Portal</span>
+                                </a>
+                            </div>
+                        </nav>
+                    </aside>
+
+                    <main className="main-content">
+                        <header className="header">
+                            <div className="welcome-section">
+                                <h1 style={{ color: '#fff' }}>User Registry</h1>
+                                <p>Complete directory of all registered accounts and roles.</p>
+                                <div style={{ marginTop: '10px' }}>
+                                    <a href={window.URLS['users_admin']} style={{ 
+                                        color: '#818cf8', 
+                                        textDecoration: 'none', 
+                                        fontSize: '14px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px'
+                                    }}>
+                                        <box-icon name='cog' color='#818cf8' size='xs'></box-icon>
+                                        Manage Official Users & Permissions
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div className="profile-chip" style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div className="avatar" style={{ background: '#6366f1' }}>{(window.CUR_USER || 'A')[0].toUpperCase()}</div>
+                                <span>{window.CUR_USER || 'Admin'}</span>
+                            </div>
+                        </header>
+                        
+                        <FilterBar />
+
+                        <div className="recent-submissions" style={{ marginTop: '1rem' }}>
+                            <div className="submission-box" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
+                                    <h2 style={{ color: '#fff', margin: 0 }}>Registered Accounts</h2>
+                                    <span style={{ color: '#94a3b8', fontSize: '14px' }}>Total Accounts: {window.ALL_STUDENTS.length}</span>
+                                </div>
+                                
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
+                                                <th style={{ textAlign: 'left', padding: '12px' }}>Username</th>
+                                                <th style={{ textAlign: 'left', padding: '12px' }}>Email Address</th>
+                                                <th style={{ textAlign: 'left', padding: '12px' }}>Role</th>
+                                                <th style={{ textAlign: 'left', padding: '12px' }}>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {window.ALL_STUDENTS.length > 0 ? window.ALL_STUDENTS.map(student => (
+                                                <tr key={student.id} style={{ borderBottom: '1px solid #0f172a' }}>
+                                                    <td style={{ padding: '12px', color: '#fff', fontWeight: '500' }}>
+                                                        {student.username}
+                                                    </td>
+                                                    <td style={{ padding: '12px', color: '#94a3b8', fontSize: '14px' }}>
+                                                        {student.email || 'No email provided'}
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <span style={{
+                                                            padding: '4px 10px',
+                                                            borderRadius: '6px',
+                                                            fontSize: '11px',
+                                                            fontWeight: '700',
+                                                            textTransform: 'uppercase',
+                                                            backgroundColor: getRoleColor(student.role_label) + '22',
+                                                            color: getRoleColor(student.role_label),
+                                                            border: `1px solid ${getRoleColor(student.role_label)}44`
+                                                        }}>
+                                                            {student.role_label}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                                            {student.username !== window.CUR_USER && (
+                                                                <form method="POST" action={`/delete-student/${student.id}/`} onSubmit={(e) => {
+                                                                    if (!window.confirm(`Are you sure you want to delete account ${student.username}?`)) {
+                                                                        e.preventDefault();
+                                                                    }
+                                                                }} style={{ margin: 0 }}>
+                                                                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+                                                                    <button type="submit" style={{
+                                                                        background: 'transparent',
+                                                                        color: '#ef4444',
+                                                                        border: '1px solid #ef444444',
+                                                                        padding: '4px 12px',
+                                                                        borderRadius: '6px',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '12px',
+                                                                        fontWeight: 'bold',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '5px',
+                                                                        transition: 'all 0.2s'
+                                                                    }}>
+                                                                        <box-icon name='trash' type='solid' color='#ef4444' size='xs'></box-icon>
+                                                                        Remove
+                                                                    </button>
+                                                                </form>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan="4" style={{ padding: '30px', color: '#94a3b8', textAlign: 'center' }}>
+                                                        No accounts found.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        window.addEventListener('load', () => {
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<UserDirectoryPage />);
+        });
+    </script>
+    {% endverbatim %}
+</body>
+
+</html>
