@@ -65,17 +65,18 @@
                     <box-icon name='lock-alt' type='solid' color="gray"></box-icon>
                 </div>
 
-                <div class="input-box animation" style="--D:3; --S:24; margin-bottom: 5px;">
-                    <div style="text-align: right; width: 100%; margin-top: 5px; margin-bottom: 15px;">
-                        <a href="{% url 'password_reset' %}" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 500;">Forgot Password?</a>
-                    </div>
+                <div class="animation" style="--D:3; --S:24; text-align: right; margin-top: 10px;">
+                    <a href="{% url 'password_reset' %}" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 500;">Forgot Password?</a>
+                </div>
+
+                <div class="animation" style="--D:3; --S:24; margin-top: 20px;">
                     <button class="btn" type="submit">Login</button>
                 </div>
 
                 <div class="message-section">
                     {% if messages %}
                     <div class="animation"
-                        style="--D:3; --S:24; text-align: center; margin-top: 15px; font-weight: 500;">
+                        style="--D:4; --S:25; text-align: center; margin-top: 20px; font-weight: 500; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
                         {% for message in messages %}
                         <p
                             class="message-item {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% else %}info{% endif %}">
