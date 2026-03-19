@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'anymail',
     'counseling',
 ]
 
@@ -194,14 +195,23 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
-# Email settings for Password Reset (Real Email Activated)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-EMAIL_TIMEOUT = 10 # Avoid hanging on network issues
-EMAIL_HOST_USER = 'manojnarala245@gmail.com'
-EMAIL_HOST_PASSWORD = 'vldniygwyzspcrqj' # Fixed: Spaces removed for SMTP auth
+# Email settings for Password Reset (SMTP for Local, Anymail API for Render)
+if os.environ.get('RENDER'):
+    # On Render, we use Resend API to bypass SMTP port blocking
+    EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+    ANYMAIL = {
+        "RESEND_API_KEY": os.environ.get("RESEND_API_KEY"),
+    }
+else:
+    # On Localhost, we use standard SMTP
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False
+    EMAIL_TIMEOUT = 10
+    EMAIL_HOST_USER = 'manojnarala245@gmail.com'
+    EMAIL_HOST_PASSWORD = 'vldniygwyzspcrqj'
+
 DEFAULT_FROM_EMAIL = 'Student Counseling <manojnarala245@gmail.com>'
 SERVER_EMAIL = 'manojnarala245@gmail.com'
