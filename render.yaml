@@ -9,3 +9,7 @@ services:
         value: 3.11.0
       - key: DEBUG
         value: "True"
+    disk:
+      name: sqlite_data
+      mountPath: /data
+      sizeGB: 1

@@ -510,3 +510,21 @@ def admin_view_grievance(request, pk):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+from django.core.mail import send_mail
+from django.http import HttpResponse
+
+def test_email_view(request):
+    if not request.user.is_superuser:
+        return HttpResponse("Unauthorized", status=403)
+    try:
+        send_mail(
+            'Test Email from Student Counseling',
+            'If you are reading this, your SMTP settings are working correctly!',
+            'manojnarala245@gmail.com',
+            ['manojnarala245@gmail.com'],
+            fail_silently=False,
+        )
+        return HttpResponse("Email sent successfully! Check your inbox (and spam folder).")
+    except Exception as e:
+        return HttpResponse(f"Failed to send email: {str(e)}", status=500)

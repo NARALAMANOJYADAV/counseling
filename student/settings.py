@@ -104,10 +104,17 @@ WSGI_APPLICATION = 'student.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# Persistence for SQLite on Render
+RENDER_DISK_PATH = '/data/db.sqlite3'
+if os.path.exists('/data'):
+    DB_PATH = RENDER_DISK_PATH
+else:
+    DB_PATH = BASE_DIR / 'db.sqlite3'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DB_PATH,
     }
 }
 
@@ -197,3 +204,4 @@ EMAIL_TIMEOUT = 10 # Avoid hanging on network issues
 EMAIL_HOST_USER = 'manojnarala245@gmail.com'
 EMAIL_HOST_PASSWORD = 'vldniygwyzspcrqj' # Fixed: Spaces removed for SMTP auth
 DEFAULT_FROM_EMAIL = 'Student Counseling <manojnarala245@gmail.com>'
+SERVER_EMAIL = 'manojnarala245@gmail.com'
