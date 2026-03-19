@@ -337,14 +337,18 @@
                             </td>
                         </tr>
                         <tr>
+                            <th>Roll Number</th>
+                            <td><input type="text" name="roll_number" value="{{ form.roll_number.value|default:user.username }}" readonly style="background: #f8fafc; color: #64748b;"></td>
+                            <th>Official Email</th>
+                            <td><input type="email" name="email" value="{{ form.email.value|default:user.email }}" readonly style="background: #f8fafc; color: #64748b;"></td>
+                        </tr>
+                        <tr>
                             <th>Counselor Name</th>
-                            <td colspan="3"><input type="text" name="counselor_name"
-                                    placeholder="Name of your counselor" required></td>
+                            <td colspan="3"><input type="text" name="counselor_name" value="{{ form.counselor_name.value|default:'' }}" placeholder="Name of your counselor" required></td>
                         </tr>
                         <tr>
                             <th>Student's Name</th>
-                            <td colspan="3"><input type="text" name="student_name" value="{{ user.username }}" readonly
-                                    style="background: #f8fafc; color: #64748b;"></td>
+                            <td colspan="3"><input type="text" name="student_name" value="{{ form.student_name.value|default:'' }}" placeholder="Full Name as per records" required></td>
                         </tr>
                         <tr>
                             <th>Phone Numbers</th>
@@ -378,6 +382,10 @@
                             <td><input type="text" name="hostel_name" placeholder="Hostel Name (if applicable)"></td>
                             <th>Room No.</th>
                             <td><input type="text" name="room_no" placeholder="Room No"></td>
+                        </tr>
+                        <tr>
+                            <th>Day Scholar Address</th>
+                            <td colspan="3"><textarea name="day_scholar_address" rows="2" placeholder="Full residential address for day scholars..."></textarea></td>
                         </tr>
                         <tr>
                             <th rowspan="4">Roommates (NBKRIST Hostel)</th>
@@ -426,24 +434,25 @@
                                     placeholder="Make & Reg Number (if bike)"></td>
                         </tr>
                         <tr>
-                            <th rowspan="4">Close Friends (Roll Nos)</th>
+                            <th rowspan="4">Close Friends / Co-passengers (Day Scholars)</th>
                             <th style="background: #f8fafc; font-size: 11px;">#</th>
-                            <th colspan="2">Details</th>
+                            <th>Name</th>
+                            <th>Roll Number</th>
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">1</td>
-                            <td colspan="2"><input type="text" name="friends_roll1" placeholder="Friend 1 Roll Number">
-                            </td>
+                            <td><input type="text" name="ds_name1" placeholder="Friend 1 Name"></td>
+                            <td><input type="text" name="ds_roll1" placeholder="Friend 1 Roll Number"></td>
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">2</td>
-                            <td colspan="2"><input type="text" name="friends_roll2" placeholder="Friend 2 Roll Number">
-                            </td>
+                            <td><input type="text" name="ds_name2" placeholder="Friend 2 Name"></td>
+                            <td><input type="text" name="ds_roll2" placeholder="Friend 2 Roll Number"></td>
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">3</td>
-                            <td colspan="2"><input type="text" name="friends_roll3" placeholder="Friend 3 Roll Number">
-                            </td>
+                            <td><input type="text" name="ds_name3" placeholder="Friend 3 Name"></td>
+                            <td><input type="text" name="ds_roll3" placeholder="Friend 3 Roll Number"></td>
                         </tr>
                     </table>
                 </div>
@@ -525,6 +534,14 @@
                                         <option value="No">No</option>
                                     </select></td>
                             </tr>
+                            <tr>
+                                <th>Follow-up Remarks</th>
+                                <td><textarea name="followup1" rows="2" placeholder="Notes..."></textarea></td>
+                                <td><textarea name="followup2" rows="2" placeholder="Notes..."></textarea></td>
+                                <td><textarea name="followup3" rows="2" placeholder="Notes..."></textarea></td>
+                                <td><textarea name="followup4" rows="2" placeholder="Notes..."></textarea></td>
+                                <td><textarea name="followup5" rows="2" placeholder="Notes..."></textarea></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -544,6 +561,7 @@
                                 <th>End Sem</th>
                                 <th>Total</th>
                                 <th>Result</th>
+                                <th>Pass Year</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -562,6 +580,7 @@
                                         <option value="F">Fail</option>
                                     </select>
                                 </td>
+                                <td><input type="text" name="pass_year{{i}}" placeholder="YYYY" style="width: 70px;"></td>
                             </tr>
                             {% endfor %}
                         </tbody>

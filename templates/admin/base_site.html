@@ -7,8 +7,11 @@
     <a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a>
 </h1>
 <div style="margin: 5px 0 0 10px; display: inline-block;">
-    <a href="/admin-dashboard/" style="color: #818cf8; font-weight: bold; text-decoration: none;">
-        ← Back to Admin Dashboard
+    <a href="/admin-dashboard/" style="color: #818cf8; font-weight: bold; text-decoration: none; margin-right: 15px;">
+        ← Back Dashboard
+    </a>
+    <a href="/admin-users/" style="color: #6366f1; font-weight: bold; text-decoration: none;">
+        👥 Users Directory
     </a>
 </div>
 {% endblock %}

@@ -36,7 +36,10 @@ class StudentCounseling(models.Model):
         choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected')],
         default='Pending'
     )
+    # Meta Information
     last_submission_date = models.DateTimeField(null=True, blank=True)
+    added_by_role = models.CharField(max_length=50, blank=True, null=True, verbose_name="Added by Role")
+    
     student_phone = models.CharField(max_length=15)
     father_phone = models.CharField(max_length=15)
     

@@ -234,95 +234,35 @@
             <div class="table-responsive">
                 <table>
                     <tr>
-                        <th>Year - Sem</th>
+                        <th class="col-label">Year - Sem</th>
                         <td><input type="text" value="{{ student.year_sem }}"></td>
-                        <th>Academic Year</th>
+                        <th class="col-label">Academic Year</th>
                         <td><input type="text" value="{{ student.academic_year }}"></td>
-                        <td>RTF <input type="checkbox" {% if student.rtf %}checked{% endif %}></td>
-                        <td>MQ <input type="checkbox" {% if student.mq %}checked{% endif %}></td>
-                        <td>Any Other <input type="checkbox" {% if student.any_other %}checked{% endif %}></td>
-                    </tr>
-                </table>
-            </div>
-            <div class="table-responsive">
-                <table>
-                    <tr>
-                        <th colspan="2">Name of counselor</th>
-                        <td colspan="5"><input type="text" value="{{ student.counselor_name }}"></td>
+                        <td colspan="3" style="text-align: center;">
+                            RTF <input type="checkbox" {% if student.rtf %}checked{% endif %}> &nbsp;&nbsp;
+                            MQ <input type="checkbox" {% if student.mq %}checked{% endif %}> &nbsp;&nbsp;
+                            Any Other <input type="checkbox" {% if student.any_other %}checked{% endif %}>
+                        </td>
                     </tr>
                     <tr>
-                        <th colspan="2">Student's Name</th>
-                        <td colspan="5"><input type="text" value="{{ student.student_name }}"></td>
-                    </tr>
-                    <tr>
-                        <th colspan="2">Father's Name</th>
-                        <td colspan="2"><input type="text" value="{{ student.father_name }}"></td>
-                        <th>Father's Phone</th>
-                        <td colspan="2"><input type="text" value="{{ student.father_phone }}"></td>
-                    </tr>
-                    <tr>
-                        <th colspan="2">Roll Number</th>
+                        <th class="col-label">Roll Number</th>
                         <td colspan="2"><input type="text" value="{{ student.roll_number }}"></td>
-                        <th>Student Phone No</th>
+                        <th class="col-label">Official Email</th>
+                        <td colspan="3"><input type="text" value="{{ student.email }}"></td>
+                    </tr>
+                    <tr>
+                        <th class="col-label">Counselor Name</th>
+                        <td colspan="6"><input type="text" value="{{ student.counselor_name }}"></td>
+                    </tr>
+                    <tr>
+                        <th class="col-label">Student's Name</th>
+                        <td colspan="6"><input type="text" value="{{ student.student_name }}"></td>
+                    </tr>
+                    <tr>
+                        <th class="col-label">Student Phone</th>
                         <td colspan="2"><input type="text" value="{{ student.student_phone }}"></td>
-                    </tr>
-                    <tr>
-                        <th colspan="2">Residence (Hostel)</th>
-                        <td colspan="2"><input type="text" value="{{ student.residence_hostel|default:'' }}"></td>
-                        <th>Day Scholar</th>
-                        <td colspan="2"><input type="text" value="{{ student.residence_days_scholar|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <th colspan="2">Names of the close friends</th>
-                        <td colspan="2"><input type="text" value="{{ student.friends_name1|default:'' }}"></td>
-                        <td colspan="3"><input type="text" value="{{ student.friends_roll1|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><input type="text" value="{{ student.friends_name2|default:'' }}"></td>
-                        <td colspan="5"><input type="text" value="{{ student.friends_roll2|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><input type="text" value="{{ student.friends_name3|default:'' }}"></td>
-                        <td colspan="5"><input type="text" value="{{ student.friends_roll3|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <th colspan="2">Room Mates Names & Rolls</th>
-                        <td colspan="2"><input type="text" value="{{ student.rm_name1|default:'' }}"></td>
-                        <td colspan="3"><input type="text" value="{{ student.rm_roll1|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><input type="text" value="{{ student.rm_name2|default:'' }}"></td>
-                        <td colspan="5"><input type="text" value="{{ student.rm_roll2|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><input type="text" value="{{ student.rm_name3|default:'' }}"></td>
-                        <td colspan="5"><input type="text" value="{{ student.rm_roll3|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <th colspan="2">Department Mates Names & Rolls</th>
-                        <td colspan="2"><input type="text" value="{{ student.dm_name1|default:'' }}"></td>
-                        <td colspan="3"><input type="text" value="{{ student.dm_roll1|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><input type="text" value="{{ student.dm_name2|default:'' }}"></td>
-                        <td colspan="5"><input type="text" value="{{ student.dm_roll2|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><input type="text" value="{{ student.dm_name3|default:'' }}"></td>
-                        <td colspan="5"><input type="text" value="{{ student.dm_roll3|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <th colspan="2">Dist. / State level friends Names & Rolls</th>
-                        <td colspan="2"><input type="text" value="{{ student.ds_name1|default:'' }}"></td>
-                        <td colspan="3"><input type="text" value="{{ student.ds_roll1|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><input type="text" value="{{ student.ds_name2|default:'' }}"></td>
-                        <td colspan="5"><input type="text" value="{{ student.ds_roll2|default:'' }}"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><input type="text" value="{{ student.ds_name3|default:'' }}"></td>
-                        <td colspan="5"><input type="text" value="{{ student.ds_roll3|default:'' }}"></td>
+                        <th class="col-label">Father's Phone</th>
+                        <td colspan="3"><input type="text" value="{{ student.father_phone }}"></td>
                     </tr>
                 </table>
             </div>
@@ -415,28 +355,18 @@
                     <tr>
                         <th>Month</th>
                         <th><input type="text" value="{{ student.month1|default:'' }}"></th>
-                        <th>Follow-up</th>
                         <th><input type="text" value="{{ student.month2|default:'' }}"></th>
-                        <th>Follow-up</th>
                         <th><input type="text" value="{{ student.month3|default:'' }}"></th>
-                        <th>Follow-up</th>
                         <th><input type="text" value="{{ student.month4|default:'' }}"></th>
-                        <th>Follow-up</th>
                         <th><input type="text" value="{{ student.month5|default:'' }}"></th>
-                        <th>Follow-up</th>
                     </tr>
                     <tr>
                         <td>Classes Conducted</td>
                         <td><input type="text" value="{{ student.classes_conducted1|default:'' }}"></td>
-                        <td rowspan="4"><textarea rows="4">{{ student.followup1|default:'' }}</textarea></td>
                         <td><input type="text" value="{{ student.classes_conducted2|default:'' }}"></td>
-                        <td rowspan="4"><textarea rows="4">{{ student.followup2|default:'' }}</textarea></td>
                         <td><input type="text" value="{{ student.classes_conducted3|default:'' }}"></td>
-                        <td rowspan="4"><textarea rows="4">{{ student.followup3|default:'' }}</textarea></td>
                         <td><input type="text" value="{{ student.classes_conducted4|default:'' }}"></td>
-                        <td rowspan="4"><textarea rows="4">{{ student.followup4|default:'' }}</textarea></td>
                         <td><input type="text" value="{{ student.classes_conducted5|default:'' }}"></td>
-                        <td rowspan="4"><textarea rows="4">{{ student.followup5|default:'' }}</textarea></td>
                     </tr>
                     <tr>
                         <td>Classes Attended</td>
@@ -461,6 +391,14 @@
                         <td><input type="text" value="{{ student.monthly_letter3|default:'' }}"></td>
                         <td><input type="text" value="{{ student.monthly_letter4|default:'' }}"></td>
                         <td><input type="text" value="{{ student.monthly_letter5|default:'' }}"></td>
+                    </tr>
+                    <tr>
+                        <td>Follow-up Remarks</td>
+                        <td><textarea rows="2">{{ student.followup1|default:'' }}</textarea></td>
+                        <td><textarea rows="2">{{ student.followup2|default:'' }}</textarea></td>
+                        <td><textarea rows="2">{{ student.followup3|default:'' }}</textarea></td>
+                        <td><textarea rows="2">{{ student.followup4|default:'' }}</textarea></td>
+                        <td><textarea rows="2">{{ student.followup5|default:'' }}</textarea></td>
                     </tr>
                 </table>
             </div>

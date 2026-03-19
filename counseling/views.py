@@ -111,8 +111,8 @@ def admin_users_view(request):
     ys_filter = request.GET.get('year_sem', '')
     att_filter = request.GET.get('attendance_search', '').strip()
     
-    # 1. Fetch all registered users
-    users_qs = User.objects.all()
+    # 1. Fetch all registered users (Students ONLY)
+    users_qs = User.objects.filter(is_superuser=False, is_staff=False)
     
     # 2. Pre-filter StudentCounseling records based on criteria
     # Get the single most recent active record for each roll number

@@ -1,5 +1,5 @@
 from django import forms
-from .models import StudentCounseling, Grievance
+from .models import StudentCounseling , Grievance
 from django.contrib.auth.models import User
 
 class StudentCounselingForm(forms.ModelForm):

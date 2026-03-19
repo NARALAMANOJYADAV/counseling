@@ -91,6 +91,8 @@
         };
         window.RECENT_COUNSELING = JSON.parse('{{ recent_counseling_json|escapejs }}');
         window.RECENT_GRIEVANCES = JSON.parse('{{ recent_grievances_json|escapejs }}');
+        window.ALL_STUDENTS = JSON.parse('{{ all_students_json|escapejs|default:"[]" }}');
+        window.IS_SUPERUSER = "{{ is_superuser }}" === "True";
 
         const role = window.CUR_USER.toUpperCase();
         let counselFilter = "";
@@ -114,7 +116,7 @@
         window.URLS = {
             'counseling': "/admin/counseling/studentcounseling/" + counselFilter,
             'grievance': "/admin/counseling/grievance/" + grievanceFilter,
-            'users': "/admin/auth/user/",
+            'users': window.IS_SUPERUSER ? "{% url 'admin_users' %}" : "/admin/auth/user/",
             'logout': "{% url 'logout' %}"
         };
 
@@ -152,6 +154,12 @@
                                 <a href={window.URLS['counseling']} className="nav-link">
                                     <box-icon name='list-ul' color="#94a3b8"></box-icon>
                                     <span>Approvals</span>
+                                </a>
+                            </div>
+                            <div className="nav-item">
+                                <a href={window.URLS['users']} className="nav-link">
+                                    <box-icon name='group' color="#94a3b8"></box-icon>
+                                    <span>Users</span>
                                 </a>
                             </div>
 

@@ -1,0 +1,8 @@
+{% extends "admin/change_list.html" %}
+
+{% block search %}
+    {% if custom_search_form %}
+        {{ custom_search_form }}
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

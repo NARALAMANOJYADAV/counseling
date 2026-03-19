@@ -1,0 +1,7 @@
+{
+    "venvPath": "c:\\counseling",
+    "venv": "venv",
+    "extraPaths": [
+        "c:\\counseling"
+    ]
+}
