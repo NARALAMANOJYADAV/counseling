@@ -202,8 +202,11 @@ if os.environ.get('RENDER'):
     ANYMAIL = {
         "RESEND_API_KEY": os.environ.get("RESEND_API_KEY"),
     }
+    # Resend requires domain verification for custom addresses. 
+    # Use their default onboarding address for testing on Render.
+    DEFAULT_FROM_EMAIL = 'Student Counseling <onboarding@resend.dev>'
 else:
-    # On Localhost, we use standard SMTP
+    # On Localhost, we use standard SMTP with Gmail
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
@@ -212,6 +215,6 @@ else:
     EMAIL_TIMEOUT = 10
     EMAIL_HOST_USER = 'manojnarala245@gmail.com'
     EMAIL_HOST_PASSWORD = 'vldniygwyzspcrqj'
+    DEFAULT_FROM_EMAIL = 'Student Counseling <manojnarala245@gmail.com>'
 
-DEFAULT_FROM_EMAIL = 'Student Counseling <manojnarala245@gmail.com>'
-SERVER_EMAIL = 'manojnarala245@gmail.com'
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
