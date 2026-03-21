@@ -514,17 +514,19 @@ def logout_view(request):
 from django.core.mail import send_mail
 from django.http import HttpResponse
 
+from django.conf import settings
+
 def test_email_view(request):
     if not request.user.is_superuser:
         return HttpResponse("Unauthorized", status=403)
     try:
         send_mail(
             'Test Email from Student Counseling',
-            'If you are reading this, your SMTP settings are working correctly!',
-            'manojnarala245@gmail.com',
-            ['manojnarala245@gmail.com'],
+            'If you are reading this, your settings are working correctly!',
+            settings.DEFAULT_FROM_EMAIL,
+            [request.user.email],
             fail_silently=False,
         )
-        return HttpResponse("Email sent successfully! Check your inbox (and spam folder).")
+        return HttpResponse(f"Email sent successfully from {settings.DEFAULT_FROM_EMAIL} to {request.user.email}! Check your inbox (and spam folder).")
     except Exception as e:
         return HttpResponse(f"Failed to send email: {str(e)}", status=500)
