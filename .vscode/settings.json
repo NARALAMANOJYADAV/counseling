@@ -1,5 +1,5 @@
 {
-    "liveServer.settings.port": 5501,
+    "liveServer.settings.port": 8000,
     "liveServer.settings.proxy": {
         "enable": true,
         "baseUri": "/",
@@ -7,7 +7,7 @@
     },
     "livePreview.proxyUrl": "http://127.0.0.1:8000/",
     "livePreview.defaultPreviewUrl": "http://127.0.0.1:8000/",
-    "livePreview.port": 3000,
+    "livePreview.port": 8000,
     "livePreview.serverRoot": "./",
     "task.allowAutomaticTasks": "on",
     "files.exclude": {
@@ -18,5 +18,11 @@
     "python.defaultInterpreterPath": "${workspaceFolder}\\venv\\Scripts\\python.exe",
     "python.analysis.extraPaths": [
         "${workspaceFolder}"
-    ]
+    ],
+    "remote.portsAttributes": {
+        "8000": {
+            "label": "Django Server",
+            "onAutoForward": "openBrowser"
+        }
+    }
 }
