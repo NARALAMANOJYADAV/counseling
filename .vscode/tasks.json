@@ -4,7 +4,7 @@
         {
             "label": "Django Auto-Run",
             "type": "shell",
-            "command": "python manage.py runserver 8000",
+            "command": "powershell -Command \"Try { Stop-Process -Id (Get-NetTCPConnection -LocalPort 8000).OwningProcess -ErrorAction SilentlyContinue -Force } Catch {}; python manage.py runserver 8000\"",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
