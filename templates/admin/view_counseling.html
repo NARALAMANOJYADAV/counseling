@@ -483,49 +483,29 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="col-date"><input type="text" value="{{ student.counseling_date1|default:'' }}">
-                            </td>
-                            <td colspan="7"><textarea
-                                    rows="2">{{ student.counseling_description1|default:'' }}</textarea>
-                            </td>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date1|default:'' }}"></td>
+                            <td colspan="4"><textarea rows="2">{{ student.counseling_description1|default:'' }}</textarea></td>
+                            <td colspan="3"><textarea rows="2">{{ student.prizes_participations1|default:'' }}</textarea></td>
                         </tr>
                         <tr style="background: #f1f5f9;">
                             <th class="col-date">Date</th>
                             <th colspan="7">Prizes, Participations, Disciplinary Matters, etc.</th>
                         </tr>
                         <tr>
-                            <td class="col-date"><input type="text" value="{{ student.counseling_date2|default:'' }}">
-                            </td>
-                            <td colspan="7"><textarea
-                                    rows="2">{{ student.prizes_participations1|default:'' }}</textarea>
-                            </td>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date2|default:'' }}"></td>
+                            <td colspan="7"><textarea rows="2">{{ student.prizes_participations2|default:'' }}</textarea></td>
                         </tr>
                         <tr>
-                            <td class="col-date"><input type="text" value="{{ student.counseling_date3|default:'' }}">
-                            </td>
-                            <td colspan="7"><textarea
-                                    rows="2">{{ student.prizes_participations2|default:'' }}</textarea>
-                            </td>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date3|default:'' }}"></td>
+                            <td colspan="7"><textarea rows="2">{{ student.prizes_participations3|default:'' }}</textarea></td>
                         </tr>
                         <tr>
-                            <td class="col-date"><input type="text" value="{{ student.counseling_date4|default:'' }}">
-                            </td>
-                            <td colspan="7"><textarea
-                                    rows="2">{{ student.prizes_participations3|default:'' }}</textarea>
-                            </td>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date4|default:'' }}"></td>
+                            <td colspan="7"><textarea rows="2">{{ student.prizes_participations4|default:'' }}</textarea></td>
                         </tr>
                         <tr>
-                            <td class="col-date"><input type="text" value="{{ student.counseling_date5|default:'' }}">
-                            </td>
-                            <td colspan="7"><textarea
-                                    rows="2">{{ student.prizes_participations4|default:'' }}</textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="col-date"><input type="text" value=""></td>
-                            <td colspan="7"><textarea
-                                    rows="2">{{ student.prizes_participations5|default:'' }}</textarea>
-                            </td>
+                            <td class="col-date"><input type="text" value="{{ student.counseling_date5|default:'' }}"></td>
+                            <td colspan="7"><textarea rows="2">{{ student.prizes_participations5|default:'' }}</textarea></td>
                         </tr>
                     </tbody>
                 </table>

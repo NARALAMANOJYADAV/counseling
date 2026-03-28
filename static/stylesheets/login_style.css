@@ -136,7 +136,7 @@ body {
     color: #e46033;
 }
 
-.input-box box-icon {
+.input-box .bx {
     position: absolute;
     top: 50%;
     right: 0;
@@ -145,8 +145,8 @@ body {
     color: #fff;
 }
 
-.input-box input:focus~box-icon,
-.input-box input:valid~box-icon {
+.input-box input:focus~.bx,
+.input-box input:valid~.bx {
     color: #e46033;
 }
 

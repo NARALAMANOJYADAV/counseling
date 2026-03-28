@@ -324,16 +324,16 @@
                     <table>
                         <tr>
                             <th style="width: 20%;">Year - Semester</th>
-                            <td><input type="text" name="year_sem" placeholder="e.g. III-I" required></td>
+                            <td><input type="text" name="year_sem" value="{{ form.year_sem.value|default:'' }}" placeholder="e.g. III-I" required></td>
                             <th style="width: 20%;">Academic Year</th>
-                            <td><input type="text" name="academic_year" placeholder="e.g. 2023-24" required></td>
+                            <td><input type="text" name="academic_year" value="{{ form.academic_year.value|default:'' }}" placeholder="e.g. 2023-24" required></td>
                         </tr>
                         <tr>
                             <th>Scholarship / Admission</th>
                             <td colspan="3">
-                                <label style="margin-right: 20px;"><input type="checkbox" name="rtf"> RTF</label>
-                                <label style="margin-right: 20px;"><input type="checkbox" name="mq"> MQ</label>
-                                <label><input type="checkbox" name="any_other"> Any Other</label>
+                                <label style="margin-right: 20px;"><input type="checkbox" name="rtf" {% if form.rtf.value %}checked{% endif %}> RTF</label>
+                                <label style="margin-right: 20px;"><input type="checkbox" name="mq" {% if form.mq.value %}checked{% endif %}> MQ</label>
+                                <label><input type="checkbox" name="any_other" {% if form.any_other.value %}checked{% endif %}> Any Other</label>
                             </td>
                         </tr>
                         <tr>
@@ -352,9 +352,9 @@
                         </tr>
                         <tr>
                             <th>Phone Numbers</th>
-                            <td><input type="text" name="student_phone" placeholder="Student Phone" required></td>
+                            <td><input type="text" name="student_phone" value="{{ form.student_phone.value|default:'' }}" placeholder="Student Phone" required></td>
                             <th>Father's Phone</th>
-                            <td><input type="text" name="father_phone" placeholder="Father Phone" required></td>
+                            <td><input type="text" name="father_phone" value="{{ form.father_phone.value|default:'' }}" placeholder="Father Phone" required></td>
                         </tr>
                     </table>
                 </div>
@@ -368,24 +368,24 @@
                         <tr>
                             <th>Residence Type</th>
                             <td colspan="3">
-                                <label style="margin-right: 15px;"><input type="checkbox" name="residence_hostel">
+                                <label style="margin-right: 15px;"><input type="checkbox" name="residence_hostel" {% if form.residence_hostel.value %}checked{% endif %}>
                                     NBKRIST Hostel</label>
-                                <label style="margin-right: 15px;"><input type="checkbox" name="residence_days_scholar">
+                                <label style="margin-right: 15px;"><input type="checkbox" name="residence_days_scholar" {% if form.residence_days_scholar.value %}checked{% endif %}>
                                     Day Scholar</label>
-                                <label style="margin-right: 15px;"><input type="checkbox" name="residence_college_bus">
+                                <label style="margin-right: 15px;"><input type="checkbox" name="residence_college_bus" {% if form.residence_college_bus.value %}checked{% endif %}>
                                     College Bus</label>
-                                <label><input type="checkbox" name="residence_rtc_bus"> RTC Bus</label>
+                                <label><input type="checkbox" name="residence_rtc_bus" {% if form.residence_rtc_bus.value %}checked{% endif %}> RTC Bus</label>
                             </td>
                         </tr>
                         <tr>
                             <th>Hostel / Address</th>
-                            <td><input type="text" name="hostel_name" placeholder="Hostel Name (if applicable)"></td>
+                            <td><input type="text" name="hostel_name" value="{{ form.hostel_name.value|default:'' }}" placeholder="Hostel Name (if applicable)"></td>
                             <th>Room No.</th>
-                            <td><input type="text" name="room_no" placeholder="Room No"></td>
+                            <td><input type="text" name="room_no" value="{{ form.room_no.value|default:'' }}" placeholder="Room No"></td>
                         </tr>
                         <tr>
                             <th>Day Scholar Address</th>
-                            <td colspan="3"><textarea name="day_scholar_address" rows="2" placeholder="Full residential address for day scholars..."></textarea></td>
+                            <td colspan="3"><textarea name="day_scholar_address" rows="2" placeholder="Full residential address for day scholars...">{{ form.day_scholar_address.value|default:'' }}</textarea></td>
                         </tr>
                         <tr>
                             <th rowspan="4">Roommates (NBKRIST Hostel)</th>
@@ -395,18 +395,18 @@
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">1</td>
-                            <td><input type="text" name="roommate1"></td>
-                            <td><input type="text" name="roll_no1"></td>
+                            <td><input type="text" name="roommate1" value="{{ form.roommate1.value|default:'' }}"></td>
+                            <td><input type="text" name="roll_no1" value="{{ form.roll_no1.value|default:'' }}"></td>
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">2</td>
-                            <td><input type="text" name="roommate2"></td>
-                            <td><input type="text" name="roll_no2"></td>
+                            <td><input type="text" name="roommate2" value="{{ form.roommate2.value|default:'' }}"></td>
+                            <td><input type="text" name="roll_no2" value="{{ form.roll_no2.value|default:'' }}"></td>
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">3</td>
-                            <td><input type="text" name="roommate3"></td>
-                            <td><input type="text" name="roll_no3"></td>
+                            <td><input type="text" name="roommate3" value="{{ form.roommate3.value|default:'' }}"></td>
+                            <td><input type="text" name="roll_no3" value="{{ form.roll_no3.value|default:'' }}"></td>
                         </tr>
                     </table>
                 </div>
@@ -419,18 +419,18 @@
                     <table>
                         <tr>
                             <th>Bus Details</th>
-                            <td><input type="text" name="bus_route" placeholder="Route Name"></td>
+                            <td><input type="text" name="bus_route" value="{{ form.bus_route.value|default:'' }}" placeholder="Route Name"></td>
                             <th>Bus No.</th>
-                            <td><input type="text" name="bus_no" placeholder="e.g. 15"></td>
+                            <td><input type="text" name="bus_no" value="{{ form.bus_no.value|default:'' }}" placeholder="e.g. 15"></td>
                         </tr>
                         <tr>
                             <th>Travel Place (RTC/Bike)</th>
-                            <td colspan="3"><input type="text" name="rtc_travel_place"
+                            <td colspan="3"><input type="text" name="rtc_travel_place" value="{{ form.rtc_travel_place.value|default:'' }}"
                                     placeholder="From where do you travel?"></td>
                         </tr>
                         <tr>
                             <th>Vehicle Details</th>
-                            <td colspan="3"><input type="text" name="vehicle_details"
+                            <td colspan="3"><input type="text" name="vehicle_details" value="{{ form.vehicle_details.value|default:'' }}"
                                     placeholder="Make & Reg Number (if bike)"></td>
                         </tr>
                         <tr>
@@ -441,18 +441,18 @@
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">1</td>
-                            <td><input type="text" name="ds_name1" placeholder="Friend 1 Name"></td>
-                            <td><input type="text" name="ds_roll1" placeholder="Friend 1 Roll Number"></td>
+                            <td><input type="text" name="ds_name1" value="{{ form.ds_name1.value|default:'' }}" placeholder="Friend 1 Name"></td>
+                            <td><input type="text" name="ds_roll1" value="{{ form.ds_roll1.value|default:'' }}" placeholder="Friend 1 Roll Number"></td>
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">2</td>
-                            <td><input type="text" name="ds_name2" placeholder="Friend 2 Name"></td>
-                            <td><input type="text" name="ds_roll2" placeholder="Friend 2 Roll Number"></td>
+                            <td><input type="text" name="ds_name2" value="{{ form.ds_name2.value|default:'' }}" placeholder="Friend 2 Name"></td>
+                            <td><input type="text" name="ds_roll2" value="{{ form.ds_roll2.value|default:'' }}" placeholder="Friend 2 Roll Number"></td>
                         </tr>
                         <tr>
                             <td style="text-align: center; background: #f8fafc;">3</td>
-                            <td><input type="text" name="ds_name3" placeholder="Friend 3 Name"></td>
-                            <td><input type="text" name="ds_roll3" placeholder="Friend 3 Roll Number"></td>
+                            <td><input type="text" name="ds_name3" value="{{ form.ds_name3.value|default:'' }}" placeholder="Friend 3 Name"></td>
+                            <td><input type="text" name="ds_roll3" value="{{ form.ds_roll3.value|default:'' }}" placeholder="Friend 3 Roll Number"></td>
                         </tr>
                     </table>
                 </div>
@@ -476,71 +476,71 @@
                         <tbody>
                             <tr>
                                 <th>Month Name</th>
-                                <td><input type="text" name="month1" placeholder="e.g. Jan"></td>
-                                <td><input type="text" name="month2"></td>
-                                <td><input type="text" name="month3"></td>
-                                <td><input type="text" name="month4"></td>
-                                <td><input type="text" name="month5"></td>
+                                <td><input type="text" name="month1" value="{{ form.month1.value|default:'' }}" placeholder="e.g. Jan"></td>
+                                <td><input type="text" name="month2" value="{{ form.month2.value|default:'' }}"></td>
+                                <td><input type="text" name="month3" value="{{ form.month3.value|default:'' }}"></td>
+                                <td><input type="text" name="month4" value="{{ form.month4.value|default:'' }}"></td>
+                                <td><input type="text" name="month5" value="{{ form.month5.value|default:'' }}"></td>
                             </tr>
                             <tr>
                                 <th>Classes Conducted</th>
-                                <td><input type="number" name="classes_conducted1"></td>
-                                <td><input type="number" name="classes_conducted2"></td>
-                                <td><input type="number" name="classes_conducted3"></td>
-                                <td><input type="number" name="classes_conducted4"></td>
-                                <td><input type="number" name="classes_conducted5"></td>
+                                <td><input type="number" name="classes_conducted1" value="{{ form.classes_conducted1.value|default:'' }}"></td>
+                                <td><input type="number" name="classes_conducted2" value="{{ form.classes_conducted2.value|default:'' }}"></td>
+                                <td><input type="number" name="classes_conducted3" value="{{ form.classes_conducted3.value|default:'' }}"></td>
+                                <td><input type="number" name="classes_conducted4" value="{{ form.classes_conducted4.value|default:'' }}"></td>
+                                <td><input type="number" name="classes_conducted5" value="{{ form.classes_conducted5.value|default:'' }}"></td>
                             </tr>
                             <tr>
                                 <th>Classes Attended</th>
-                                <td><input type="number" name="classes_attended1"></td>
-                                <td><input type="number" name="classes_attended2"></td>
-                                <td><input type="number" name="classes_attended3"></td>
-                                <td><input type="number" name="classes_attended4"></td>
-                                <td><input type="number" name="classes_attended5"></td>
+                                <td><input type="number" name="classes_attended1" value="{{ form.classes_attended1.value|default:'' }}"></td>
+                                <td><input type="number" name="classes_attended2" value="{{ form.classes_attended2.value|default:'' }}"></td>
+                                <td><input type="number" name="classes_attended3" value="{{ form.classes_attended3.value|default:'' }}"></td>
+                                <td><input type="number" name="classes_attended4" value="{{ form.classes_attended4.value|default:'' }}"></td>
+                                <td><input type="number" name="classes_attended5" value="{{ form.classes_attended5.value|default:'' }}"></td>
                             </tr>
                             <tr>
                                 <th>% Attendance</th>
-                                <td><input type="number" step="0.01" name="attendance_percent1"></td>
-                                <td><input type="number" step="0.01" name="attendance_percent2"></td>
-                                <td><input type="number" step="0.01" name="attendance_percent3"></td>
-                                <td><input type="number" step="0.01" name="attendance_percent4"></td>
-                                <td><input type="number" step="0.01" name="attendance_percent5"></td>
+                                <td><input type="number" step="0.01" name="attendance_percent1" value="{{ form.attendance_percent1.value|default:'' }}"></td>
+                                <td><input type="number" step="0.01" name="attendance_percent2" value="{{ form.attendance_percent2.value|default:'' }}"></td>
+                                <td><input type="number" step="0.01" name="attendance_percent3" value="{{ form.attendance_percent3.value|default:'' }}"></td>
+                                <td><input type="number" step="0.01" name="attendance_percent4" value="{{ form.attendance_percent4.value|default:'' }}"></td>
+                                <td><input type="number" step="0.01" name="attendance_percent5" value="{{ form.attendance_percent5.value|default:'' }}"></td>
                             </tr>
                             <tr>
                                 <th>Monthly Letter</th>
                                 <td><select name="monthly_letter1">
-                                        <option value="">-</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
+                                        <option value="" {% if not form.monthly_letter1.value %}selected{% endif %}>-</option>
+                                        <option value="Yes" {% if form.monthly_letter1.value == 'Yes' %}selected{% endif %}>Yes</option>
+                                        <option value="No" {% if form.monthly_letter1.value == 'No' %}selected{% endif %}>No</option>
                                     </select></td>
                                 <td><select name="monthly_letter2">
-                                        <option value="">-</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
+                                        <option value="" {% if not form.monthly_letter2.value %}selected{% endif %}>-</option>
+                                        <option value="Yes" {% if form.monthly_letter2.value == 'Yes' %}selected{% endif %}>Yes</option>
+                                        <option value="No" {% if form.monthly_letter2.value == 'No' %}selected{% endif %}>No</option>
                                     </select></td>
                                 <td><select name="monthly_letter3">
-                                        <option value="">-</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
+                                        <option value="" {% if not form.monthly_letter3.value %}selected{% endif %}>-</option>
+                                        <option value="Yes" {% if form.monthly_letter3.value == 'Yes' %}selected{% endif %}>Yes</option>
+                                        <option value="No" {% if form.monthly_letter3.value == 'No' %}selected{% endif %}>No</option>
                                     </select></td>
                                 <td><select name="monthly_letter4">
-                                        <option value="">-</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
+                                        <option value="" {% if not form.monthly_letter4.value %}selected{% endif %}>-</option>
+                                        <option value="Yes" {% if form.monthly_letter4.value == 'Yes' %}selected{% endif %}>Yes</option>
+                                        <option value="No" {% if form.monthly_letter4.value == 'No' %}selected{% endif %}>No</option>
                                     </select></td>
                                 <td><select name="monthly_letter5">
-                                        <option value="">-</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
+                                        <option value="" {% if not form.monthly_letter5.value %}selected{% endif %}>-</option>
+                                        <option value="Yes" {% if form.monthly_letter5.value == 'Yes' %}selected{% endif %}>Yes</option>
+                                        <option value="No" {% if form.monthly_letter5.value == 'No' %}selected{% endif %}>No</option>
                                     </select></td>
                             </tr>
                             <tr>
                                 <th>Follow-up Remarks</th>
-                                <td><textarea name="followup1" rows="2" placeholder="Notes..."></textarea></td>
-                                <td><textarea name="followup2" rows="2" placeholder="Notes..."></textarea></td>
-                                <td><textarea name="followup3" rows="2" placeholder="Notes..."></textarea></td>
-                                <td><textarea name="followup4" rows="2" placeholder="Notes..."></textarea></td>
-                                <td><textarea name="followup5" rows="2" placeholder="Notes..."></textarea></td>
+                                <td><textarea name="followup1" rows="2" placeholder="Notes...">{{ form.followup1.value|default:'' }}</textarea></td>
+                                <td><textarea name="followup2" rows="2" placeholder="Notes...">{{ form.followup2.value|default:'' }}</textarea></td>
+                                <td><textarea name="followup3" rows="2" placeholder="Notes...">{{ form.followup3.value|default:'' }}</textarea></td>
+                                <td><textarea name="followup4" rows="2" placeholder="Notes...">{{ form.followup4.value|default:'' }}</textarea></td>
+                                <td><textarea name="followup5" rows="2" placeholder="Notes...">{{ form.followup5.value|default:'' }}</textarea></td>
                             </tr>
                         </tbody>
                     </table>
@@ -565,24 +565,91 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for i in "12345"|make_list %}
+                            <!-- Subject 1 -->
                             <tr>
-                                <td><input type="text" name="subject{{i}}" placeholder="Subject Title"></td>
-                                <td><input type="number" name="mid1_{{i}}"></td>
-                                <td><input type="number" name="mid2_{{i}}"></td>
-                                <td><input type="number" name="sessional{{i}}"></td>
-                                <td><input type="number" name="endsem{{i}}"></td>
-                                <td><input type="number" name="total{{i}}"></td>
+                                <td><input type="text" name="subject1" value="{{ form.subject1.value|default:'' }}" placeholder="Subject Title"></td>
+                                <td><input type="number" name="mid1_1" value="{{ form.mid1_1.value|default:'' }}"></td>
+                                <td><input type="number" name="mid2_1" value="{{ form.mid2_1.value|default:'' }}"></td>
+                                <td><input type="number" name="sessional1" value="{{ form.sessional1.value|default:'' }}"></td>
+                                <td><input type="number" name="endsem1" value="{{ form.endsem1.value|default:'' }}"></td>
+                                <td><input type="number" name="total1" value="{{ form.total1.value|default:'' }}"></td>
                                 <td>
-                                    <select name="result{{i}}">
-                                        <option value="">-</option>
-                                        <option value="P">Pass</option>
-                                        <option value="F">Fail</option>
+                                    <select name="result1">
+                                        <option value="" {% if not form.result1.value %}selected{% endif %}>-</option>
+                                        <option value="P" {% if form.result1.value == 'P' %}selected{% endif %}>Pass</option>
+                                        <option value="F" {% if form.result1.value == 'F' %}selected{% endif %}>Fail</option>
                                     </select>
                                 </td>
-                                <td><input type="text" name="pass_year{{i}}" placeholder="YYYY" style="width: 70px;"></td>
+                                <td><input type="text" name="pass_year1" value="{{ form.pass_year1.value|default:'' }}" placeholder="YYYY" style="width: 70px;"></td>
                             </tr>
-                            {% endfor %}
+                            <!-- Subject 2 -->
+                            <tr>
+                                <td><input type="text" name="subject2" value="{{ form.subject2.value|default:'' }}" placeholder="Subject Title"></td>
+                                <td><input type="number" name="mid1_2" value="{{ form.mid1_2.value|default:'' }}"></td>
+                                <td><input type="number" name="mid2_2" value="{{ form.mid2_2.value|default:'' }}"></td>
+                                <td><input type="number" name="sessional2" value="{{ form.sessional2.value|default:'' }}"></td>
+                                <td><input type="number" name="endsem2" value="{{ form.endsem2.value|default:'' }}"></td>
+                                <td><input type="number" name="total2" value="{{ form.total2.value|default:'' }}"></td>
+                                <td>
+                                    <select name="result2">
+                                        <option value="" {% if not form.result2.value %}selected{% endif %}>-</option>
+                                        <option value="P" {% if form.result2.value == 'P' %}selected{% endif %}>Pass</option>
+                                        <option value="F" {% if form.result2.value == 'F' %}selected{% endif %}>Fail</option>
+                                    </select>
+                                </td>
+                                <td><input type="text" name="pass_year2" value="{{ form.pass_year2.value|default:'' }}" placeholder="YYYY" style="width: 70px;"></td>
+                            </tr>
+                            <!-- Subject 3 -->
+                            <tr>
+                                <td><input type="text" name="subject3" value="{{ form.subject3.value|default:'' }}" placeholder="Subject Title"></td>
+                                <td><input type="number" name="mid1_3" value="{{ form.mid1_3.value|default:'' }}"></td>
+                                <td><input type="number" name="mid2_3" value="{{ form.mid2_3.value|default:'' }}"></td>
+                                <td><input type="number" name="sessional3" value="{{ form.sessional3.value|default:'' }}"></td>
+                                <td><input type="number" name="endsem3" value="{{ form.endsem3.value|default:'' }}"></td>
+                                <td><input type="number" name="total3" value="{{ form.total3.value|default:'' }}"></td>
+                                <td>
+                                    <select name="result3">
+                                        <option value="" {% if not form.result3.value %}selected{% endif %}>-</option>
+                                        <option value="P" {% if form.result3.value == 'P' %}selected{% endif %}>Pass</option>
+                                        <option value="F" {% if form.result3.value == 'F' %}selected{% endif %}>Fail</option>
+                                    </select>
+                                </td>
+                                <td><input type="text" name="pass_year3" value="{{ form.pass_year3.value|default:'' }}" placeholder="YYYY" style="width: 70px;"></td>
+                            </tr>
+                            <!-- Subject 4 -->
+                            <tr>
+                                <td><input type="text" name="subject4" value="{{ form.subject4.value|default:'' }}" placeholder="Subject Title"></td>
+                                <td><input type="number" name="mid1_4" value="{{ form.mid1_4.value|default:'' }}"></td>
+                                <td><input type="number" name="mid2_4" value="{{ form.mid2_4.value|default:'' }}"></td>
+                                <td><input type="number" name="sessional4" value="{{ form.sessional4.value|default:'' }}"></td>
+                                <td><input type="number" name="endsem4" value="{{ form.endsem4.value|default:'' }}"></td>
+                                <td><input type="number" name="total4" value="{{ form.total4.value|default:'' }}"></td>
+                                <td>
+                                    <select name="result4">
+                                        <option value="" {% if not form.result4.value %}selected{% endif %}>-</option>
+                                        <option value="P" {% if form.result4.value == 'P' %}selected{% endif %}>Pass</option>
+                                        <option value="F" {% if form.result4.value == 'F' %}selected{% endif %}>Fail</option>
+                                    </select>
+                                </td>
+                                <td><input type="text" name="pass_year4" value="{{ form.pass_year4.value|default:'' }}" placeholder="YYYY" style="width: 70px;"></td>
+                            </tr>
+                            <!-- Subject 5 -->
+                            <tr>
+                                <td><input type="text" name="subject5" value="{{ form.subject5.value|default:'' }}" placeholder="Subject Title"></td>
+                                <td><input type="number" name="mid1_5" value="{{ form.mid1_5.value|default:'' }}"></td>
+                                <td><input type="number" name="mid2_5" value="{{ form.mid2_5.value|default:'' }}"></td>
+                                <td><input type="number" name="sessional5" value="{{ form.sessional5.value|default:'' }}"></td>
+                                <td><input type="number" name="endsem5" value="{{ form.endsem5.value|default:'' }}"></td>
+                                <td><input type="number" name="total5" value="{{ form.total5.value|default:'' }}"></td>
+                                <td>
+                                    <select name="result5">
+                                        <option value="" {% if not form.result5.value %}selected{% endif %}>-</option>
+                                        <option value="P" {% if form.result5.value == 'P' %}selected{% endif %}>Pass</option>
+                                        <option value="F" {% if form.result5.value == 'F' %}selected{% endif %}>Fail</option>
+                                    </select>
+                                </td>
+                                <td><input type="text" name="pass_year5" value="{{ form.pass_year5.value|default:'' }}" placeholder="YYYY" style="width: 70px;"></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -602,19 +669,32 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><input type="date" name="counseling_date1"></td>
+                                <td><input type="date" name="counseling_date1" value="{{ form.counseling_date1.value|default:'' }}"></td>
                                 <td><textarea name="counseling_description1" rows="2"
-                                        placeholder="Details of session..."></textarea></td>
+                                        placeholder="Details of session...">{{ form.counseling_description1.value|default:'' }}</textarea></td>
                                 <td><textarea name="prizes_participations1" rows="2"
-                                        placeholder="Achievements..."></textarea></td>
+                                        placeholder="Achievements...">{{ form.prizes_participations1.value|default:'' }}</textarea></td>
                             </tr>
-                            {% for i in "2345"|make_list %}
                             <tr>
-                                <td><input type="date" name="counseling_date{{i}}"></td>
-                                <td colspan="2"><textarea name="prizes_participations{{i}}" rows="2"
-                                        placeholder="More participations/achievements..."></textarea></td>
+                                <td><input type="date" name="counseling_date2" value="{{ form.counseling_date2.value|default:'' }}"></td>
+                                <td colspan="2"><textarea name="prizes_participations2" rows="2"
+                                        placeholder="More participations/achievements...">{{ form.prizes_participations2.value|default:'' }}</textarea></td>
                             </tr>
-                            {% endfor %}
+                            <tr>
+                                <td><input type="date" name="counseling_date3" value="{{ form.counseling_date3.value|default:'' }}"></td>
+                                <td colspan="2"><textarea name="prizes_participations3" rows="2"
+                                        placeholder="More participations/achievements...">{{ form.prizes_participations3.value|default:'' }}</textarea></td>
+                            </tr>
+                            <tr>
+                                <td><input type="date" name="counseling_date4" value="{{ form.counseling_date4.value|default:'' }}"></td>
+                                <td colspan="2"><textarea name="prizes_participations4" rows="2"
+                                        placeholder="More participations/achievements...">{{ form.prizes_participations4.value|default:'' }}</textarea></td>
+                            </tr>
+                            <tr>
+                                <td><input type="date" name="counseling_date5" value="{{ form.counseling_date5.value|default:'' }}"></td>
+                                <td colspan="2"><textarea name="prizes_participations5" rows="2"
+                                        placeholder="More participations/achievements...">{{ form.prizes_participations5.value|default:'' }}</textarea></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>

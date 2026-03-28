@@ -11,13 +11,8 @@
         content="NBKRIST, NBKR, NBKR Institute of Science and Technology, Student Counseling, Student Grievance, Academic Portal, Vidyanagar, counseling portal, grievance management">
     <meta name="author" content="NBKRIST Admin">
 
-    <!-- Open Graph for Social Media -->
-    <meta property="og:title" content="Student Counseling & Grievance Portal | NBKRIST">
-    <meta property="og:description"
-        content="Streamlined platform for NBKRIST students to handle counseling and academic grievances.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://counsiling-xvhh.onrender.com/">
-
+    <!-- Boxicons CSS for reliable icon rendering -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="{% static 'stylesheets/login_style.css' %}" id="main-styles">
     <style>
         .local-view-only {
@@ -57,13 +52,13 @@
                 <div class="input-box animation" style="--D:1; --S:22">
                     <input type="text" name="username" id="login-user" required placeholder=" ">
                     <label for="login-user">Roll Number</label>
-                    <box-icon type='solid' name='user' color="gray"></box-icon>
+                    <i class='bx bxs-user'></i>
                 </div>
 
                 <div class="input-box animation" style="--D:2; --S:23">
                     <input type="password" name="password" id="login-pass" required placeholder=" ">
                     <label for="login-pass">Password</label>
-                    <box-icon name='lock-alt' type='solid' color="gray"></box-icon>
+                    <i class='bx bxs-lock-alt'></i>
                 </div>
 
                 <div class="animation" style="--D:3; --S:24; text-align: right; margin-top: 10px;">
@@ -108,19 +103,19 @@
                 <div class="input-box animation" style="--li:18; --S:1">
                     <input type="text" name="username" id="reg-user" required placeholder=" ">
                     <label for="reg-user">Roll Number</label>
-                    <box-icon type='solid' name='user' color="gray"></box-icon>
+                    <i class='bx bxs-user'></i>
                 </div>
 
                 <div class="input-box animation" style="--li:19; --S:2">
                     <input type="email" name="email" id="reg-email" required placeholder=" ">
                     <label for="reg-email">Email (@nbkrist.org)</label>
-                    <box-icon name='envelope' type='solid' color="gray"></box-icon>
+                    <i class='bx bxs-envelope'></i>
                 </div>
 
                 <div class="input-box animation" style="--li:19; --S:3">
                     <input type="password" name="password" id="reg-pass" required placeholder=" ">
                     <label for="reg-pass">Password</label>
-                    <box-icon name='lock-alt' type='solid' color="gray"></box-icon>
+                    <i class='bx bxs-lock-alt'></i>
                 </div>
 
                 <div class="input-box animation" style="--li:20; --S:4">
@@ -141,7 +136,6 @@
 
     </div>
 
-    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
     <script src="{% static 'js/login_script.js' %}?v=6"></script>
 
 </body>

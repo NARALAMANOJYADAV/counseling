@@ -19,8 +19,8 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Boxicons -->
-    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+    <!-- Boxicons CSS -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 
 <body style="background: #0f172a; color: #f8fafc; font-family: 'Outfit', sans-serif;">
@@ -41,6 +41,7 @@
             'users_admin': "/admin/auth/user/",
             'logout': "{% url 'logout' %}"
         };
+        window.CSRF_TOKEN = "{{ csrf_token }}";
     </script>
 
     {% verbatim %}
@@ -103,33 +104,33 @@
                 <div className="dashboard-layout">
                     <aside className="sidebar">
                         <div className="logo">
-                            <box-icon name='user-detail' type='solid' color='#818cf8'></box-icon>
+                            <i className='bx bxs-user-detail' style={{ color: '#818cf8', fontSize: '24px' }}></i>
                             <span>USER MGMT</span>
                         </div>
 
                         <nav className="nav-links">
                             <div className="nav-item">
                                 <a href={window.URLS['dashboard']} className="nav-link">
-                                    <box-icon name='dashboard' color="#94a3b8"></box-icon>
+                                    <i className='bx bxs-dashboard' style={{ color: '#94a3b8' }}></i>
                                     <span>Home</span>
                                 </a>
                             </div>
                             <div className="nav-item">
                                 <a href={window.URLS['counseling']} className="nav-link">
-                                    <box-icon name='list-ul' color="#94a3b8"></box-icon>
+                                    <i className='bx bx-list-ul' style={{ color: '#94a3b8' }}></i>
                                     <span>Approvals</span>
                                 </a>
                             </div>
                             <div className="nav-item">
                                 <a href="#" className="nav-link active">
-                                    <box-icon name='group' type='solid' color="white"></box-icon>
+                                    <i className='bx bxs-group' style={{ color: 'white' }}></i>
                                     <span>Users Registry</span>
                                 </a>
                             </div>
 
                             <div className="nav-item logout-item">
                                 <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
-                                    <box-icon name='log-out' color="#ef4444"></box-icon>
+                                    <i className='bx bx-log-out' style={{ color: '#ef4444' }}></i>
                                     <span>Exit Portal</span>
                                 </a>
                             </div>
@@ -212,7 +213,7 @@
                                                                         e.preventDefault();
                                                                     }
                                                                 }} style={{ margin: 0 }}>
-                                                                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+                                                                    <input type="hidden" name="csrfmiddlewaretoken" value={window.CSRF_TOKEN} />
                                                                     <button type="submit" style={{
                                                                         background: 'transparent',
                                                                         color: '#ef4444',

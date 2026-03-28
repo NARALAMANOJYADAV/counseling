@@ -19,8 +19,8 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Boxicons -->
-    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+    <!-- Boxicons CSS -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 
 <body>
@@ -139,35 +139,35 @@
                 <div className="dashboard-layout">
                     <aside className="sidebar">
                         <div className="logo">
-                            <box-icon name='shield-quarter' type='solid' color='#818cf8'></box-icon>
+                            <i className='bx bxs-shield-quarter' style={{ color: '#818cf8', fontSize: '24px' }}></i>
                             <span>ADMIN PANEL</span>
                         </div>
 
                         <nav className="nav-links">
                             <div className="nav-item">
                                 <a href="#" className="nav-link active">
-                                    <box-icon name='dashboard' type='solid' color="white"></box-icon>
+                                    <i className='bx bxs-dashboard' style={{ color: 'white' }}></i>
                                     <span>Home</span>
                                 </a>
                             </div>
                             <div className="nav-item">
                                 <a href={window.URLS['counseling']} className="nav-link">
-                                    <box-icon name='list-ul' color="#94a3b8"></box-icon>
+                                    <i className='bx bx-list-ul' style={{ color: '#94a3b8' }}></i>
                                     <span>Approvals</span>
                                 </a>
                             </div>
                             <div className="nav-item">
                                 <a href={window.URLS['users']} className="nav-link">
-                                    <box-icon name='group' color="#94a3b8"></box-icon>
+                                    <i className='bx bx-group' style={{ color: '#94a3b8' }}></i>
                                     <span>Users</span>
                                 </a>
                             </div>
 
-                            <div className="nav-item logout-item">
-                                <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
-                                    <box-icon name='log-out' color="#ef4444"></box-icon>
-                                    <span>Exit Portal</span>
-                                </a>
+                             <div className="nav-item logout-item">
+                                 <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
+                                     <i className='bx bx-log-out' style={{ color: '#ef4444' }}></i>
+                                     <span>Exit Portal</span>
+                                 </a>
                             </div>
                         </nav>
                     </aside>
@@ -224,7 +224,7 @@
                             {menuItems.map(item => (
                                 <a key={item.id} href={window.URLS[item.id]} className="action-btn" style={{ background: '#1e293b', color: '#fff' }}>
                                     <div className={`icon-wrapper ${item.color}`}>
-                                        <box-icon name={item.icon} type='solid' color='white' size='md'></box-icon>
+                                        <i className={`bx bxs-${item.icon}`} style={{ fontSize: '24px' }}></i>
                                     </div>
                                     <span>{item.label}</span>
                                 </a>
