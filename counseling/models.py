@@ -11,6 +11,9 @@ class StudentCounseling(models.Model):
     student_name = models.CharField(max_length=100)
     roll_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
+    student_year = models.CharField(max_length=20, blank=True, null=True, verbose_name="Year")
+    branch = models.CharField(max_length=50, blank=True, null=True)
+    section = models.CharField(max_length=20, blank=True, null=True)
     approval_status = models.CharField(
         max_length=20, 
         choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected')],

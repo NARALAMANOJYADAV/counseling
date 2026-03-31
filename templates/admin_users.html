@@ -46,6 +46,8 @@
 
     {% verbatim %}
     <script type="text/babel">
+        const { useState } = React;
+
         const getRoleColor = (role) => {
             switch (role) {
                 case 'Super Admin': return '#ef4444';
@@ -100,6 +102,218 @@
         };
 
         const UserDirectoryPage = () => {
+            const [selectedUsers, setSelectedUsers] = useState([]);
+            const [counselorName, setCounselorName] = useState("");
+            const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+            const [isRangeModalOpen, setIsRangeModalOpen] = useState(false);
+            const [isAddRangeModalOpen, setIsAddRangeModalOpen] = useState(false);
+            const [rangeStart, setRangeStart] = useState("");
+            const [rangeEnd, setRangeEnd] = useState("");
+            
+            // New Fields for Bulk Updates/Creation
+            const [studentYear, setStudentYear] = useState("");
+            const [branch, setBranch] = useState("");
+            const [section, setSection] = useState("");
+            
+            const [bulkStudentsText, setBulkStudentsText] = useState("");
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSelectAll = (e) => {
+                if (e.target.checked) {
+                    setSelectedUsers(window.ALL_STUDENTS.map(s => s.username));
+                } else {
+                    setSelectedUsers([]);
+                }
+            };
+
+            const handleSelectUser = (username) => {
+                if (selectedUsers.includes(username)) {
+                    setSelectedUsers(selectedUsers.filter(u => u !== username));
+                } else {
+                    setSelectedUsers([...selectedUsers, username]);
+                }
+            };
+
+            const handleBulkAssign = async (action = 'assign') => {
+                if (action === 'assign' && !counselorName.trim()) {
+                    alert("Please enter a counselor name.");
+                    return;
+                }
+                if (selectedUsers.length === 0) {
+                    alert("Please select at least one student.");
+                    return;
+                }
+                
+                setIsSubmitting(true);
+                try {
+                    const res = await fetch("/bulk-assign-counselor/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": window.CSRF_TOKEN
+                        },
+                        body: JSON.stringify({
+                            roll_numbers: selectedUsers,
+                            counselor_name: action === 'remove' ? '' : counselorName.trim(),
+                            student_year: studentYear.trim(),
+                            branch: branch.trim(),
+                            section: section.trim(),
+                            action: action
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(action === 'remove' ? `Successfully unassigned counselor for ${data.updated} students.` : `Successfully assigned counselor for ${data.updated} students.`);
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                } catch (e) {
+                    alert("Error updating counselor.");
+                }
+                setIsSubmitting(false);
+            };
+
+            const handleBulkDelete = async () => {
+                if (selectedUsers.length === 0) return;
+                if (!window.confirm(`Are you sure you want to PERMANENTLY delete ${selectedUsers.length} selected students? This cannot be undone.`)) {
+                    return;
+                }
+                setIsSubmitting(true);
+                try {
+                    const res = await fetch("/bulk-delete-students/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": window.CSRF_TOKEN
+                        },
+                        body: JSON.stringify({
+                            roll_numbers: selectedUsers
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(`Successfully deleted ${data.deleted} student records.`);
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                } catch (e) {
+                    alert("Error deleting students.");
+                }
+                setIsSubmitting(false);
+            };
+
+            const handleSelectRange = () => {
+                if (!rangeStart.trim() || !rangeEnd.trim()) {
+                    alert("Please enter both start and end roll numbers.");
+                    return;
+                }
+                
+                const start = rangeStart.trim().toUpperCase();
+                const end = rangeEnd.trim().toUpperCase();
+                
+                const filtered = window.ALL_STUDENTS.filter(s => {
+                    const r = s.username.toUpperCase();
+                    // Basic string comparison is usually fine for Roll Numbers of same length/format
+                    return r >= start && r <= end;
+                }).map(s => s.username);
+                
+                if (filtered.length > 0) {
+                    const newSet = new Set([...selectedUsers, ...filtered]);
+                    setSelectedUsers(Array.from(newSet));
+                    setIsRangeModalOpen(false);
+                    alert(`Selected ${filtered.length} additional students in range.`);
+                } else {
+                    alert("No students found in that range.");
+                }
+            };
+
+            const handleBulkAdd = async () => {
+                if (!bulkStudentsText.trim()) {
+                    alert("Please enter student data.");
+                    return;
+                }
+                
+                const lines = bulkStudentsText.trim().split("\n");
+                const students = [];
+                for (let line of lines) {
+                    const parts = line.split(",").map(p => p.trim());
+                    if (parts.length >= 2 && parts[0]) {
+                        students.push({
+                            roll_number: parts[0],
+                            student_name: parts[1],
+                            email: parts[2] || "",
+                            counselor_name: parts[3] || ""
+                        });
+                    }
+                }
+                
+                if (students.length === 0) {
+                    alert("No valid student data found. Format requires at least Roll Number and Name separated by comma.");
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                setIsSubmitting(true);
+                try {
+                    const res = await fetch("/bulk-add-students/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": window.CSRF_TOKEN
+                        },
+                        body: JSON.stringify({ students })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(`Successfully added ${data.created} students.`);
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                } catch (e) {
+                    alert("Error adding students.");
+                }
+                setIsSubmitting(false);
+            };
+
+            const handleBulkAddRange = async () => {
+                if (!rangeStart.trim() || !rangeEnd.trim()) {
+                    alert("Please enter both start and end roll numbers.");
+                    return;
+                }
+                setIsSubmitting(true);
+                try {
+                    const res = await fetch("/bulk-add-students/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": window.CSRF_TOKEN
+                        },
+                        body: JSON.stringify({ 
+                            mode: 'range',
+                            start: rangeStart.trim(),
+                            end: rangeEnd.trim(),
+                            counselor_name: counselorName.trim(),
+                            student_year: studentYear.trim(),
+                            branch: branch.trim(),
+                            section: section.trim()
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(`Successfully created ${data.created} new students in range.`);
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                } catch (e) {
+                    alert("Error creating students.");
+                }
+                setIsSubmitting(false);
+            };
+
             return (
                 <div className="dashboard-layout">
                     <aside className="sidebar">
@@ -167,29 +381,111 @@
 
                         <div className="recent-submissions" style={{ marginTop: '1rem' }}>
                             <div className="submission-box" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
-                                    <h2 style={{ color: '#fff', margin: 0 }}>Registered Accounts</h2>
-                                    <span style={{ color: '#94a3b8', fontSize: '14px' }}>Total Accounts: {window.ALL_STUDENTS.length}</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #334155', paddingBottom: '10px', flexWrap: 'wrap', gap: '15px' }}>
+                                    <div>
+                                        <h2 style={{ color: '#fff', margin: 0 }}>Registered Accounts</h2>
+                                        <div style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px' }}>Total Accounts: {window.ALL_STUDENTS.length}</div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        {selectedUsers.length > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(99, 102, 241, 0.1)', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)', flexWrap: 'wrap' }}>
+                                                <span style={{ fontSize: '13px', color: '#818cf8', fontWeight: 'bold' }}>{selectedUsers.length} selected</span>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Enter Counselor Name" 
+                                                    value={counselorName}
+                                                    onChange={e => setCounselorName(e.target.value)}
+                                                    style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '13px', width: '130px' }}
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Year (e.g. 1)" 
+                                                    value={studentYear}
+                                                    onChange={e => setStudentYear(e.target.value)}
+                                                    style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '13px', width: '90px' }}
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Branch" 
+                                                    value={branch}
+                                                    onChange={e => setBranch(e.target.value)}
+                                                    style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '13px', width: '90px' }}
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Sec" 
+                                                    value={section}
+                                                    onChange={e => setSection(e.target.value)}
+                                                    style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '13px', width: '60px' }}
+                                                />
+                                                <button onClick={() => handleBulkAssign('assign')} disabled={isSubmitting} style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }} title="Update properties and assign counselor">
+                                                    Update properties
+                                                </button>
+                                                <button onClick={() => handleBulkAssign('remove')} disabled={isSubmitting} style={{ background: '#eab308', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }} title="Remove counselor from students">
+                                                    Remove Counselor
+                                                </button>
+                                                {window.IS_SUPERUSER && (
+                                                    <button onClick={handleBulkDelete} disabled={isSubmitting} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <box-icon name='trash' type='solid' color='#fff' size='xs'></box-icon> Delete All
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                        
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button onClick={() => setIsRangeModalOpen(true)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <i className='bx bx-move-horizontal'></i> Select by Range
+                                            </button>
+                                            <button onClick={() => setIsAddModalOpen(true)} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <i className='bx bx-list-plus'></i> Paste List
+                                            </button>
+                                            <button onClick={() => setIsAddRangeModalOpen(true)} style={{ background: '#059669', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <i className='bx bx-layer-plus'></i> Add by Range
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div style={{ overflowX: 'auto' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                         <thead>
                                             <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
-                                                <th style={{ textAlign: 'left', padding: '12px' }}>Username</th>
+                                                <th style={{ textAlign: 'left', padding: '12px', width: '40px' }}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={selectedUsers.length === window.ALL_STUDENTS.length && window.ALL_STUDENTS.length > 0} 
+                                                        onChange={handleSelectAll} 
+                                                        style={{ cursor: 'pointer' }}
+                                                    />
+                                                </th>
+                                                <th style={{ textAlign: 'left', padding: '12px' }}>Roll / Username</th>
                                                 <th style={{ textAlign: 'left', padding: '12px' }}>Email Address</th>
+                                                <th style={{ textAlign: 'left', padding: '12px' }}>Counselor</th>
                                                 <th style={{ textAlign: 'left', padding: '12px' }}>Role</th>
                                                 <th style={{ textAlign: 'left', padding: '12px' }}>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {window.ALL_STUDENTS.length > 0 ? window.ALL_STUDENTS.map(student => (
-                                                <tr key={student.id} style={{ borderBottom: '1px solid #0f172a' }}>
+                                                <tr key={student.id} style={{ borderBottom: '1px solid #0f172a', background: selectedUsers.includes(student.username) ? 'rgba(99, 102, 241, 0.05)' : 'transparent' }}>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={selectedUsers.includes(student.username)}
+                                                            onChange={() => handleSelectUser(student.username)}
+                                                            style={{ cursor: 'pointer' }}
+                                                        />
+                                                    </td>
                                                     <td style={{ padding: '12px', color: '#fff', fontWeight: '500' }}>
                                                         {student.username}
+                                                        {student.is_manual && <span style={{ marginLeft: '5px', fontSize: '10px', background: '#3b82f644', color: '#60a5fa', padding: '2px 4px', borderRadius: '4px' }}>Manual</span>}
                                                     </td>
                                                     <td style={{ padding: '12px', color: '#94a3b8', fontSize: '14px' }}>
-                                                        {student.email || 'No email provided'}
+                                                        {student.email || <span style={{ color: '#475569' }}>-</span>}
+                                                    </td>
+                                                    <td style={{ padding: '12px', color: '#cbd5e1', fontSize: '14px', fontWeight: '500' }}>
+                                                        {student.counselor_name || <span style={{ color: '#475569', fontStyle: 'italic' }}>Unassigned</span>}
                                                     </td>
                                                     <td style={{ padding: '12px' }}>
                                                         <span style={{
@@ -238,7 +534,7 @@
                                                 </tr>
                                             )) : (
                                                 <tr>
-                                                    <td colSpan="4" style={{ padding: '30px', color: '#94a3b8', textAlign: 'center' }}>
+                                                    <td colSpan="6" style={{ padding: '30px', color: '#94a3b8', textAlign: 'center' }}>
                                                         No accounts found.
                                                     </td>
                                                 </tr>
@@ -248,6 +544,184 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        {isAddModalOpen && (
+                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                                <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '600px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <h2 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <i className='bx bx-user-plus' style={{ color: '#10b981' }}></i> Add Multiple Students
+                                        </h2>
+                                        <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '24px' }}>&times;</button>
+                                    </div>
+                                    
+                                    <div style={{ marginBottom: '1rem', color: '#94a3b8', fontSize: '14px' }}>
+                                        <p style={{ marginBottom: '5px' }}>Enter one student per line in the format:</p>
+                                        <p><strong style={{ color: '#cbd5e1' }}>Roll Number, Full Name, Email Address, Counselor Name</strong></p>
+                                        <div style={{ marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '12px', color: '#64748b' }}>
+                                            Email and Counselor Name are optional. E.g.<br/>
+                                            20KB1A4240, John Doe, john@example.com, Dr. Smith<br/>
+                                            20KB1A4241, Jane Doe, , Dr. Smith<br/>
+                                            20KB1A4242, Mark
+                                        </div>
+                                    </div>
+                                    
+                                    <textarea 
+                                        value={bulkStudentsText}
+                                        onChange={e => setBulkStudentsText(e.target.value)}
+                                        placeholder="20KB1A4240, John Doe, john@example.com, Dr. Smith&#10;20KB1A4241, Jane Doe"
+                                        style={{ width: '100%', height: '200px', background: '#0f172a', color: '#fff', border: '1px solid #334155', borderRadius: '8px', padding: '15px', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }}
+                                    ></textarea>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
+                                        <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                            Cancel
+                                        </button>
+                                        <button onClick={handleBulkAdd} disabled={isSubmitting} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            {isSubmitting ? 'Adding...' : 'Add Students'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Select by Range Modal */}
+                        {isRangeModalOpen && (
+                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                                <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '400px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <h2 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
+                                            <i className='bx bx-move-horizontal' style={{ color: '#3b82f6' }}></i> Select Students by Range
+                                        </h2>
+                                        <button onClick={() => setIsRangeModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '24px' }}>&times;</button>
+                                    </div>
+                                    
+                                    <div style={{ marginBottom: '1rem', color: '#94a3b8', fontSize: '14px' }}>
+                                        <p style={{ marginBottom: '15px' }}>Select EXISTING students between two range numbers.</p>
+                                        
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Start Roll Number</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="e.g. 20KB1A4201" 
+                                                    value={rangeStart}
+                                                    onChange={e => setRangeStart(e.target.value)}
+                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>End Roll Number</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="e.g. 20KB1A4260" 
+                                                    value={rangeEnd}
+                                                    onChange={e => setRangeEnd(e.target.value)}
+                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Year</label>
+                                                    <input type="text" placeholder="e.g. 1" value={studentYear} onChange={e => setStudentYear(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Branch</label>
+                                                    <input type="text" placeholder="CS" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Sec</label>
+                                                    <input type="text" placeholder="A" value={section} onChange={e => setSection(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
+                                        <button onClick={() => setIsRangeModalOpen(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                            Cancel
+                                        </button>
+                                        <button onClick={handleSelectRange} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            Select Range
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Add Students By Range Modal */}
+                        {isAddRangeModalOpen && (
+                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                                <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '400px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <h2 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
+                                            <i className='bx bx-layer-plus' style={{ color: '#059669' }}></i> Add Students by Range
+                                        </h2>
+                                        <button onClick={() => setIsAddRangeModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '24px' }}>&times;</button>
+                                    </div>
+                                    
+                                    <div style={{ marginBottom: '1rem', color: '#94a3b8', fontSize: '14px' }}>
+                                        <p style={{ marginBottom: '15px' }}>Automatically generate and add NEW student profiles sequentially.</p>
+                                        
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Start Roll Number</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="e.g. 20KB1A4201" 
+                                                    value={rangeStart}
+                                                    onChange={e => setRangeStart(e.target.value)}
+                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>End Roll Number</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="e.g. 20KB1A4260" 
+                                                    value={rangeEnd}
+                                                    onChange={e => setRangeEnd(e.target.value)}
+                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Assign to Counselor (Optional)</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="e.g. Dr. Roberts" 
+                                                    value={counselorName}
+                                                    onChange={e => setCounselorName(e.target.value)}
+                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Year</label>
+                                                    <input type="text" placeholder="e.g. 1" value={studentYear} onChange={e => setStudentYear(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Branch</label>
+                                                    <input type="text" placeholder="CS" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Sec</label>
+                                                    <input type="text" placeholder="A" value={section} onChange={e => setSection(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
+                                        <button onClick={() => setIsAddRangeModalOpen(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                            Cancel
+                                        </button>
+                                        <button onClick={handleBulkAddRange} disabled={isSubmitting} style={{ background: '#059669', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            {isSubmitting ? 'Adding...' : 'Generate Profiles'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </main>
                 </div>
             );

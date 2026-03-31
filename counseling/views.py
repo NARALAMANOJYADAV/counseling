@@ -9,6 +9,7 @@ from django.views.decorators.cache import never_cache
 from django.utils import timezone
 import json
 from datetime import timedelta
+from django.http import JsonResponse
 
 @login_required
 def dashboard_view(request):
@@ -153,6 +154,7 @@ def admin_users_view(request):
             pass
             
     filtered_student_rolls = set(sc_qs.values_list('roll_number', flat=True))
+    counselor_map = {sc.roll_number: getattr(sc, 'counselor_name', '') or '' for sc in sc_qs}
     
     users_list = users_qs.values('id', 'username', 'email', 'is_staff', 'is_superuser')
     processed_users = []
@@ -180,11 +182,12 @@ def admin_users_view(request):
                 continue
         
         u['role_label'] = role
+        u['counselor_name'] = counselor_map.get(u['username'], '')
         processed_users.append(u)
         registered_usernames.add(u['username'])
 
     # 3. Handle manual records that match the filters
-    all_manual = sc_qs.exclude(roll_number__in=registered_usernames).values('roll_number', 'student_name', 'email', 'added_by_role')
+    all_manual = sc_qs.exclude(roll_number__in=registered_usernames).values('roll_number', 'student_name', 'email', 'added_by_role', 'counselor_name')
     for record in all_manual:
         identifier = record['roll_number'] or record['student_name']
         source_role = record['added_by_role'] or 'Add by Admin'
@@ -195,7 +198,8 @@ def admin_users_view(request):
             'role_label': f"Student({source_role})",
             'is_staff': False,
             'is_superuser': False,
-            'is_manual': True
+            'is_manual': True,
+            'counselor_name': record['counselor_name'] or ''
         })
 
     # Options for filters
@@ -246,6 +250,139 @@ def delete_student_view(request, user_id):
                 messages.error(request, "User or record not found.")
                 
     return redirect('admin_users')
+
+@login_required
+def bulk_assign_counselor(request):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            student_rolls = data.get('roll_numbers', [])
+            counselor_name = data.get('counselor_name', '').strip()
+            student_year = data.get('student_year', '').strip()
+            branch = data.get('branch', '').strip()
+            section = data.get('section', '').strip()
+            action = data.get('action', 'assign') # 'assign' or 'remove'
+            
+            if action == 'assign':
+                update_dict = {}
+                if counselor_name: update_dict['counselor_name'] = counselor_name
+                if student_year: update_dict['student_year'] = student_year
+                if branch: update_dict['branch'] = branch
+                if section: update_dict['section'] = section
+                
+                if not update_dict:
+                    return JsonResponse({'success': False, 'error': 'No fields provided for update'})
+                    
+                updated_count = StudentCounseling.objects.filter(roll_number__in=student_rolls).update(**update_dict)
+                return JsonResponse({'success': True, 'updated': updated_count})
+                
+            elif action == 'remove':
+                updated_count = StudentCounseling.objects.filter(roll_number__in=student_rolls).update(counselor_name='')
+                return JsonResponse({'success': True, 'updated': updated_count})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+def bulk_delete_students(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'error': 'Only Super Admins can bulk delete'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            from django.contrib.auth.models import User
+            data = json.loads(request.body)
+            student_rolls = data.get('roll_numbers', [])
+            
+            if not student_rolls:
+                return JsonResponse({'success': False, 'error': 'No students selected'})
+                
+            # Delete associated User accounts
+            User.objects.filter(username__in=student_rolls).delete()
+            # Delete student counseling records
+            sc_deleted, _ = StudentCounseling.objects.filter(roll_number__in=student_rolls).delete()
+            # Delete grievances
+            Grievance.objects.filter(roll_number__in=student_rolls).delete()
+            
+            return JsonResponse({'success': True, 'deleted': sc_deleted})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+def bulk_add_students(request):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            mode = data.get('mode', 'list')
+            created_count = 0
+            
+            if mode == 'range':
+                start = str(data.get('start', '')).strip().upper()
+                end = str(data.get('end', '')).strip().upper()
+                counselor = str(data.get('counselor_name', '')).strip()
+                student_year = str(data.get('student_year', '')).strip()
+                branch = str(data.get('branch', '')).strip()
+                section = str(data.get('section', '')).strip()
+                
+                prefix_len = 0
+                while prefix_len < len(start) and prefix_len < len(end) and start[prefix_len] == end[prefix_len]:
+                    prefix_len += 1
+                
+                prefix = start[:prefix_len]
+                s_suf = start[prefix_len:]
+                e_suf = end[prefix_len:]
+                
+                if s_suf.isdigit() and e_suf.isdigit():
+                    s_val, e_val = int(s_suf), int(e_suf)
+                    if 0 <= e_val - s_val <= 1000:
+                        for i in range(s_val, e_val + 1):
+                            roll = prefix + str(i).zfill(len(s_suf))
+                            if not StudentCounseling.objects.filter(roll_number=roll).exists():
+                                StudentCounseling.objects.create(roll_number=roll, student_name=roll, email="", counselor_name=counselor, student_year=student_year, branch=branch, section=section, added_by_role=request.user.username.upper())
+                                created_count += 1
+                else:
+                    try:
+                        s_val, e_val = int(s_suf, 36), int(e_suf, 36)
+                        if 0 <= e_val - s_val <= 1000:
+                            import string
+                            def b36(n, l):
+                                a, b = string.digits + string.ascii_uppercase, ''
+                                if n == 0: return '0'.zfill(l)
+                                while n: n, i = divmod(n, 36); b = a[i] + b
+                                return b.zfill(l)
+                            for i in range(s_val, e_val + 1):
+                                roll = prefix + b36(i, len(s_suf))
+                                if not StudentCounseling.objects.filter(roll_number=roll).exists():
+                                    StudentCounseling.objects.create(roll_number=roll, student_name=roll, email="", counselor_name=counselor, student_year=student_year, branch=branch, section=section, added_by_role=request.user.username.upper())
+                                    created_count += 1
+                    except ValueError:
+                        pass
+            else:
+                students = data.get('students', [])
+                student_year = str(data.get('student_year', '')).strip()
+                branch = str(data.get('branch', '')).strip()
+                section = str(data.get('section', '')).strip()
+                
+                for st in students:
+                    roll = str(st.get('roll_number', '')).strip().upper()
+                    name = str(st.get('student_name', '')).strip()
+                    counselor = str(st.get('counselor_name', '')).strip()
+                    if not name: name = roll
+                    if roll and not StudentCounseling.objects.filter(roll_number=roll).exists():
+                        StudentCounseling.objects.create(roll_number=roll, student_name=name, email=str(st.get('email', '')).strip(), counselor_name=counselor, student_year=student_year, branch=branch, section=section, added_by_role=request.user.username.upper())
+                        created_count += 1
+                        
+            return JsonResponse({'success': True, 'created': created_count})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 def counseling_form_view(request):
     if not request.user.is_authenticated:

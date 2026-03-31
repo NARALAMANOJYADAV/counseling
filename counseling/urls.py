@@ -22,6 +22,9 @@ urlpatterns = [
     path('view-form/grievance/<int:pk>/', views.admin_view_grievance, name='admin_view_grievance'),
     path('delete-student/<str:user_id>/', views.delete_student_view, name='delete_student'),
     path('admin-users/', views.admin_users_view, name='admin_users'),
+    path('bulk-assign-counselor/', views.bulk_assign_counselor, name='bulk_assign_counselor'),
+    path('bulk-add-students/', views.bulk_add_students, name='bulk_add_students'),
+    path('bulk-delete-students/', views.bulk_delete_students, name='bulk_delete_students'),
     
     # Password Reset specifically defined to avoid /accounts/login redirection conflicts
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='registration/password_reset_form.html'), name='password_reset'),
