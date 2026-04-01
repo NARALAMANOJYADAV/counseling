@@ -105,28 +105,23 @@ WSGI_APPLICATION = 'student.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Persistence for SQLite on Render
-RENDER_DISK_PATH = '/data/db.sqlite3'
-if os.path.exists('/data'):
-    DB_PATH = RENDER_DISK_PATH
-else:
-    DB_PATH = BASE_DIR / 'db.sqlite3'
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': DB_PATH,
-    }
-}
-
-# Use PostgreSQL on Railway if DATABASE_URL is provided
 if os.environ.get('DATABASE_URL'):
-    DATABASES['default'] = dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=0,
-        ssl_require=True
-    )
-    # If using PostgreSQL, we need to ensure psycopg2-binary is used
+    # PostgreSQL for Production (Render)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # SQLite for Local Development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
