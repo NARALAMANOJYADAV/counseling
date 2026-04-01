@@ -153,12 +153,12 @@ def admin_users_view(request):
         except ValueError:
             pass
             
-    filtered_student_rolls = set(sc_qs.values_list('roll_number', flat=True))
-    counselor_map = {sc.roll_number: getattr(sc, 'counselor_name', '') or '' for sc in sc_qs}
+    filtered_student_rolls_upper = {roll.upper() for roll in sc_qs.values_list('roll_number', flat=True) if roll}
+    counselor_map = {str(sc.roll_number).upper(): getattr(sc, 'counselor_name', '') or '' for sc in sc_qs if sc.roll_number}
     
     users_list = users_qs.values('id', 'username', 'email', 'is_staff', 'is_superuser')
     processed_users = []
-    registered_usernames = set()
+    registered_usernames_upper = set()
     
     for u in users_list:
         role = "Student"
@@ -177,19 +177,23 @@ def admin_users_view(request):
         
         # Apply filtering: If it's a student, they must be in the filtered_student_rolls
         # If no filters are active (ay, ys, att all empty), we show all.
+        username_upper = u['username'].upper()
         if (ay_filter or ys_filter or att_filter) and is_student:
-            if u['username'] not in filtered_student_rolls:
+            if username_upper not in filtered_student_rolls_upper:
                 continue
         
         u['role_label'] = role
-        u['counselor_name'] = counselor_map.get(u['username'], '')
+        u['counselor_name'] = counselor_map.get(username_upper, '')
         processed_users.append(u)
-        registered_usernames.add(u['username'])
+        registered_usernames_upper.add(username_upper)
 
     # 3. Handle manual records that match the filters
-    all_manual = sc_qs.exclude(roll_number__in=registered_usernames).values('roll_number', 'student_name', 'email', 'added_by_role', 'counselor_name')
+    all_manual = sc_qs.values('roll_number', 'student_name', 'email', 'added_by_role', 'counselor_name')
     for record in all_manual:
-        identifier = record['roll_number'] or record['student_name']
+        identifier = str(record['roll_number'] or record['student_name']).upper()
+        if identifier in registered_usernames_upper:
+            continue
+            
         source_role = record['added_by_role'] or 'Add by Admin'
         processed_users.append({
             'id': f"manual_{identifier}", 
@@ -234,7 +238,7 @@ def delete_student_view(request, user_id):
         if user_id_str.startswith('manual_'):
             # Manual record deletion (no User account)
             roll = user_id_str.replace('manual_', '')
-            StudentCounseling.objects.filter(roll_number=roll).delete()
+            StudentCounseling.objects.filter(roll_number__iexact=roll).delete()
             messages.success(request, f"Manual student record {roll} removed from registry.")
         else:
             # Standard User account and associated data deletion
@@ -242,8 +246,8 @@ def delete_student_view(request, user_id):
                 user = User.objects.get(id=user_id)
                 username = user.username
                 # Clean up all related student data
-                StudentCounseling.objects.filter(roll_number=username).delete()
-                Grievance.objects.filter(roll_number=username).delete()
+                StudentCounseling.objects.filter(roll_number__iexact=username).delete()
+                Grievance.objects.filter(roll_number__iexact=username).delete()
                 user.delete()
                 messages.success(request, f"User {username} and all records deleted successfully.")
             except (User.DoesNotExist, ValueError):
@@ -265,6 +269,7 @@ def bulk_assign_counselor(request):
             branch = data.get('branch', '').strip()
             section = data.get('section', '').strip()
             action = data.get('action', 'assign') # 'assign' or 'remove'
+            student_rolls_upper = [str(r).upper() for r in student_rolls]
             
             if action == 'assign':
                 update_dict = {}
@@ -276,11 +281,29 @@ def bulk_assign_counselor(request):
                 if not update_dict:
                     return JsonResponse({'success': False, 'error': 'No fields provided for update'})
                     
-                updated_count = StudentCounseling.objects.filter(roll_number__in=student_rolls).update(**update_dict)
+                updated_count = 0
+                for roll in student_rolls_upper:
+                    try:
+                        obj = StudentCounseling.objects.get(roll_number__iexact=roll)
+                        for k, v in update_dict.items():
+                            setattr(obj, k, v)
+                        obj.save()
+                        updated_count += 1
+                    except StudentCounseling.DoesNotExist:
+                        StudentCounseling.objects.create(
+                            roll_number=roll.upper(),
+                            student_name=roll.upper(),
+                            added_by_role=request.user.username.upper(),
+                            **update_dict
+                        )
+                        updated_count += 1
                 return JsonResponse({'success': True, 'updated': updated_count})
                 
             elif action == 'remove':
-                updated_count = StudentCounseling.objects.filter(roll_number__in=student_rolls).update(counselor_name='')
+                updated_count = 0
+                for roll in student_rolls_upper:
+                    count = StudentCounseling.objects.filter(roll_number__iexact=roll).update(counselor_name='')
+                    if count > 0: updated_count += 1
                 return JsonResponse({'success': True, 'updated': updated_count})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
@@ -295,17 +318,18 @@ def bulk_delete_students(request):
         try:
             from django.contrib.auth.models import User
             data = json.loads(request.body)
-            student_rolls = data.get('roll_numbers', [])
+            student_rolls_upper = [str(r).upper() for r in student_rolls]
             
-            if not student_rolls:
+            if not student_rolls_upper:
                 return JsonResponse({'success': False, 'error': 'No students selected'})
                 
-            # Delete associated User accounts
-            User.objects.filter(username__in=student_rolls).delete()
-            # Delete student counseling records
-            sc_deleted, _ = StudentCounseling.objects.filter(roll_number__in=student_rolls).delete()
-            # Delete grievances
-            Grievance.objects.filter(roll_number__in=student_rolls).delete()
+            sc_deleted = 0
+            # Iterate case-insensitively to ensure solid deletion
+            for roll in student_rolls_upper:
+                User.objects.filter(username__iexact=roll).delete()
+                deleted, _ = StudentCounseling.objects.filter(roll_number__iexact=roll).delete()
+                Grievance.objects.filter(roll_number__iexact=roll).delete()
+                if deleted: sc_deleted += 1
             
             return JsonResponse({'success': True, 'deleted': sc_deleted})
         except Exception as e:
@@ -339,48 +363,60 @@ def bulk_add_students(request):
                 s_suf = start[prefix_len:]
                 e_suf = end[prefix_len:]
                 
+                from django.contrib.auth.models import User
+                
+                def b36(n, l):
+                    import string
+                    a, b = string.digits + string.ascii_uppercase, ''
+                    if n == 0: return '0'.zfill(l)
+                    while n: n, i = divmod(n, 36); b = a[i] + b
+                    return b.zfill(l)
+                    
+                s_val = e_val = None
                 if s_suf.isdigit() and e_suf.isdigit():
                     s_val, e_val = int(s_suf), int(e_suf)
-                    if 0 <= e_val - s_val <= 1000:
-                        for i in range(s_val, e_val + 1):
-                            roll = prefix + str(i).zfill(len(s_suf))
-                            if not StudentCounseling.objects.filter(roll_number=roll).exists():
-                                StudentCounseling.objects.create(roll_number=roll, student_name=roll, email="", counselor_name=counselor, student_year=student_year, branch=branch, section=section, added_by_role=request.user.username.upper())
-                                created_count += 1
                 else:
                     try:
                         s_val, e_val = int(s_suf, 36), int(e_suf, 36)
-                        if 0 <= e_val - s_val <= 1000:
-                            import string
-                            def b36(n, l):
-                                a, b = string.digits + string.ascii_uppercase, ''
-                                if n == 0: return '0'.zfill(l)
-                                while n: n, i = divmod(n, 36); b = a[i] + b
-                                return b.zfill(l)
-                            for i in range(s_val, e_val + 1):
-                                roll = prefix + b36(i, len(s_suf))
-                                if not StudentCounseling.objects.filter(roll_number=roll).exists():
-                                    StudentCounseling.objects.create(roll_number=roll, student_name=roll, email="", counselor_name=counselor, student_year=student_year, branch=branch, section=section, added_by_role=request.user.username.upper())
-                                    created_count += 1
                     except ValueError:
                         pass
+                
+                if s_val is not None and e_val is not None and 0 <= e_val - s_val <= 1000:
+                    for i in range(s_val, e_val + 1):
+                        roll = prefix + (str(i).zfill(len(s_suf)) if s_suf.isdigit() else b36(i, len(s_suf)))
+                        
+                        # Create User and Profile
+                        if not User.objects.filter(username__iexact=roll).exists():
+                            User.objects.create_user(username=roll, password=roll)
+                            
+                        if not StudentCounseling.objects.filter(roll_number__iexact=roll).exists():
+                            StudentCounseling.objects.create(roll_number=roll, student_name=roll, email="", counselor_name=counselor, student_year=student_year, branch=branch, section=section, added_by_role=request.user.username.upper())
+                            created_count += 1
             else:
                 students = data.get('students', [])
                 student_year = str(data.get('student_year', '')).strip()
                 branch = str(data.get('branch', '')).strip()
                 section = str(data.get('section', '')).strip()
+                from django.contrib.auth.models import User
                 
                 for st in students:
                     roll = str(st.get('roll_number', '')).strip().upper()
                     name = str(st.get('student_name', '')).strip()
                     counselor = str(st.get('counselor_name', '')).strip()
                     if not name: name = roll
-                    if roll and not StudentCounseling.objects.filter(roll_number=roll).exists():
-                        StudentCounseling.objects.create(roll_number=roll, student_name=name, email=str(st.get('email', '')).strip(), counselor_name=counselor, student_year=student_year, branch=branch, section=section, added_by_role=request.user.username.upper())
-                        created_count += 1
+                    
+                    if roll:
+                        if not User.objects.filter(username__iexact=roll).exists():
+                            User.objects.create_user(username=roll, password=roll)
+                            
+                        if not StudentCounseling.objects.filter(roll_number__iexact=roll).exists():
+                            StudentCounseling.objects.create(roll_number=roll, student_name=name, email=str(st.get('email', '')).strip(), counselor_name=counselor, student_year=student_year, branch=branch, section=section, added_by_role=request.user.username.upper())
+                            created_count += 1
                         
             return JsonResponse({'success': True, 'created': created_count})
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 

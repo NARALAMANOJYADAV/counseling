@@ -185,6 +185,7 @@ class StudentCounselingAdmin(admin.ModelAdmin):
                 ('email', 'student_phone', 'father_phone'),
                 ('counselor_name', 'approval_status'),
                 ('academic_year', 'year_sem'),
+                ('student_year', 'branch', 'section'),
                 ('rtf', 'mq', 'any_other'),
                 ('last_submission_date', 'view_form_button')
             ),

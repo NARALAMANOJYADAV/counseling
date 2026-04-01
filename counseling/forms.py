@@ -5,7 +5,12 @@ from django.contrib.auth.models import User
 class StudentCounselingForm(forms.ModelForm):
     class Meta:
         model = StudentCounseling
-        fields = '__all__'
+        exclude = [
+            'student_year', 'branch', 'section', 
+            'approval_status', 'counselor_approval', 'hod_approval', 
+            'incharge_approval', 'director_approval', 
+            'added_by_role', 'last_submission_date'
+        ]
         widgets = {
             'counseling_date1': forms.DateInput(attrs={'type': 'date'}),
             'counseling_date2': forms.DateInput(attrs={'type': 'date'}),
