@@ -108,9 +108,12 @@ def admin_users_view(request):
     import json
     
     # Capture filters
-    ay_filter = request.GET.get('academic_year', '')
+    roll_filter = request.GET.get('roll_number', '').strip()
     ys_filter = request.GET.get('year_sem', '')
     att_filter = request.GET.get('attendance_search', '').strip()
+    br_filter = request.GET.get('branch', '').strip()
+    sec_filter = request.GET.get('section', '').strip()
+    sty_filter = request.GET.get('student_year', '').strip()
     
     # 1. Fetch all registered users (Students ONLY)
     users_qs = User.objects.filter(is_superuser=False, is_staff=False)
@@ -127,10 +130,16 @@ def admin_users_view(request):
             
     sc_qs = StudentCounseling.objects.filter(id__in=latest_ids)
     
-    if ay_filter:
-        sc_qs = sc_qs.filter(academic_year__iexact=ay_filter.strip())
+    if roll_filter:
+        sc_qs = sc_qs.filter(roll_number__icontains=roll_filter)
     if ys_filter:
         sc_qs = sc_qs.filter(year_sem__iexact=ys_filter.strip())
+    if br_filter:
+        sc_qs = sc_qs.filter(branch__iexact=br_filter)
+    if sec_filter:
+        sc_qs = sc_qs.filter(section__iexact=sec_filter)
+    if sty_filter:
+        sc_qs = sc_qs.filter(student_year__iexact=sty_filter)
         
     if att_filter:
         try:
@@ -176,9 +185,9 @@ def admin_users_view(request):
             is_student = False
         
         # Apply filtering: If it's a student, they must be in the filtered_student_rolls
-        # If no filters are active (ay, ys, att all empty), we show all.
+        # If no filters are active, we show all.
         username_upper = u['username'].upper()
-        if (ay_filter or ys_filter or att_filter) and is_student:
+        if (roll_filter or ys_filter or att_filter or br_filter or sec_filter or sty_filter) and is_student:
             if username_upper not in filtered_student_rolls_upper:
                 continue
         
@@ -209,6 +218,9 @@ def admin_users_view(request):
     # Options for filters
     years = list(StudentCounseling.objects.values_list('academic_year', flat=True).distinct().order_by('academic_year'))
     sems = list(StudentCounseling.objects.values_list('year_sem', flat=True).distinct().order_by('year_sem'))
+    student_years_opts = list(StudentCounseling.objects.values_list('student_year', flat=True).distinct().order_by('student_year'))
+    branches = list(StudentCounseling.objects.values_list('branch', flat=True).distinct().order_by('branch'))
+    sections = list(StudentCounseling.objects.values_list('section', flat=True).distinct().order_by('section'))
 
     context = {
         'all_students_json': json.dumps(processed_users),
@@ -216,14 +228,54 @@ def admin_users_view(request):
         'filter_data': json.dumps({
             'years': [y for y in years if y],
             'sems': [s for s in sems if s],
+            'student_years': [sy for sy in student_years_opts if sy],
+            'branches': [b for b in branches if b],
+            'sections': [sec for sec in sections if sec],
             'current': {
-                'ay': ay_filter,
+                'roll': roll_filter,
                 'ys': ys_filter,
+                'sy': sty_filter,
+                'br': br_filter,
+                'sec': sec_filter,
                 'att': att_filter
             }
         })
     }
     return render(request, 'admin_users.html', context)
+
+@login_required
+def admin_bulk_manage_view(request):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+    
+    from django.contrib.auth.models import User
+    from .models import StudentCounseling
+    import json
+    
+    all_qs = StudentCounseling.objects.all().order_by('roll_number', '-last_submission_date')
+    latest_ids = []
+    seen = set()
+    for sc in all_qs:
+        if sc.roll_number and sc.roll_number not in seen:
+            seen.add(sc.roll_number)
+            latest_ids.append(sc.id)
+            
+    sc_qs = StudentCounseling.objects.filter(id__in=latest_ids)
+    
+    users_qs = User.objects.filter(is_superuser=False, is_staff=False)
+    filtered_student_rolls_upper = {roll.upper() for roll in sc_qs.values_list('roll_number', flat=True) if roll}
+    
+    users_list = users_qs.values('id', 'username', 'email')
+    processed_users = []
+    
+    for u in users_list:
+        processed_users.append(u)
+
+    context = {
+        'all_students_json': json.dumps(processed_users),
+        'is_superuser': request.user.is_superuser,
+    }
+    return render(request, 'admin_bulk_manage.html', context)
 
 @login_required
 def delete_student_view(request, user_id):
@@ -318,6 +370,7 @@ def bulk_delete_students(request):
         try:
             from django.contrib.auth.models import User
             data = json.loads(request.body)
+            student_rolls = data.get('roll_numbers', [])
             student_rolls_upper = [str(r).upper() for r in student_rolls]
             
             if not student_rolls_upper:
@@ -703,3 +756,129 @@ def test_email_view(request):
         return HttpResponse(f"Email sent successfully from {settings.DEFAULT_FROM_EMAIL} to {request.user.email}! Check your inbox (and spam folder).")
     except Exception as e:
         return HttpResponse(f"Failed to send email: {str(e)}", status=500)
+
+@login_required
+def export_students_csv(request):
+    if not request.user.is_staff:
+        return HttpResponse("Unauthorized", status=403)
+        
+    import csv
+    from django.http import HttpResponse
+    import json
+    
+    # Capture filters
+    roll_filter = request.GET.get('roll_number', '').strip()
+    ys_filter = request.GET.get('year_sem', '')
+    att_filter = request.GET.get('attendance_search', '').strip()
+    br_filter = request.GET.get('branch', '').strip()
+    sec_filter = request.GET.get('section', '').strip()
+    sty_filter = request.GET.get('student_year', '').strip()
+    
+    # 1. Fetch relevant users
+    users_qs = User.objects.filter(is_superuser=False, is_staff=False)
+    
+    # 2. Extract counseling filters exactly like admin_users_view
+    all_qs = StudentCounseling.objects.all().order_by('roll_number', '-last_submission_date')
+    latest_ids = []
+    seen = set()
+    for sc in all_qs:
+        if sc.roll_number and sc.roll_number not in seen:
+            seen.add(sc.roll_number)
+            latest_ids.append(sc.id)
+            
+    sc_qs = StudentCounseling.objects.filter(id__in=latest_ids)
+    
+    if roll_filter: sc_qs = sc_qs.filter(roll_number__icontains=roll_filter)
+    if ys_filter: sc_qs = sc_qs.filter(year_sem__iexact=ys_filter.strip())
+    if br_filter: sc_qs = sc_qs.filter(branch__iexact=br_filter)
+    if sec_filter: sc_qs = sc_qs.filter(section__iexact=sec_filter)
+    if sty_filter: sc_qs = sc_qs.filter(student_year__iexact=sty_filter)
+        
+    if att_filter:
+        try:
+            search_val = att_filter.replace('%', '').strip()
+            att_query = float(search_val)
+            match_rolls = []
+            for sc in sc_qs:
+                for i in range(1, 6):
+                    val = getattr(sc, f'attendance_percent{i}', None)
+                    if val:
+                        try:
+                            val_clean = str(val).replace('%', '').strip()
+                            if abs(float(val_clean) - att_query) < 1.0:
+                                match_rolls.append(sc.roll_number)
+                                break
+                        except (ValueError, TypeError): continue
+            sc_qs = sc_qs.filter(roll_number__in=match_rolls)
+        except ValueError:
+            pass
+            
+    filtered_student_rolls_upper = {roll.upper() for roll in sc_qs.values_list('roll_number', flat=True) if roll}
+    
+    # Counselor/Branch mappings
+    sc_details = {
+        str(sc.roll_number).upper(): {
+            'counselor': getattr(sc, 'counselor_name', '') or '',
+            'branch': getattr(sc, 'branch', '') or '',
+            'year': getattr(sc, 'student_year', '') or '',
+            'section': getattr(sc, 'section', '') or ''
+        } for sc in sc_qs if sc.roll_number
+    }
+    
+    export_list = []
+    
+    # If any filter is active, only show students passing criteria
+    has_filter = bool(roll_filter or ys_filter or att_filter or br_filter or sec_filter or sty_filter)
+    
+    for u in users_qs:
+        username_upper = u.username.upper()
+        if has_filter:
+            if username_upper not in filtered_student_rolls_upper:
+                continue
+                
+        details = sc_details.get(username_upper, {})
+        export_list.append({
+            'Roll Number': u.username,
+            'Name': getattr(u, 'first_name', '') or getattr(u, 'last_name', '') or '',
+            'Email': u.email,
+            'Counselor': details.get('counselor', ''),
+            'Branch': details.get('branch', ''),
+            'Year': details.get('year', ''),
+            'Section': details.get('section', '')
+        })
+        
+    all_manual = sc_qs.values('roll_number', 'student_name', 'email', 'counselor_name', 'branch', 'student_year', 'section')
+    registered_rolls = {u.username.upper() for u in users_qs}
+    
+    for record in all_manual:
+        identifier = str(record['roll_number'] or record['student_name']).upper()
+        if identifier in registered_rolls: continue
+        # if filter is enabled, this query already handles manuals!
+        export_list.append({
+            'Roll Number': identifier,
+            'Name': record['student_name'] or '',
+            'Email': record['email'] or '',
+            'Counselor': record['counselor_name'] or '',
+            'Branch': record['branch'] or '',
+            'Year': record['student_year'] or '',
+            'Section': record['section'] or ''
+        })
+        
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="filtered_students_export.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Roll Number', 'Name', 'Email', 'Counselor', 'Branch', 'Year', 'Section'])
+    
+    for student in export_list:
+        writer.writerow([
+            student['Roll Number'],
+            student['Name'],
+            student['Email'],
+            student['Counselor'],
+            student['Branch'],
+            student['Year'],
+            student['Section']
+        ])
+        
+    return response

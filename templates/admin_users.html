@@ -39,6 +39,7 @@
             'counseling': "/admin/counseling/studentcounseling/",
             'grievance': "/admin/counseling/grievance/",
             'users_admin': "/admin/auth/user/",
+            'bulk_ops': "{% url 'admin_bulk_manage' %}",
             'logout': "{% url 'logout' %}"
         };
         window.CSRF_TOKEN = "{{ csrf_token }}";
@@ -64,37 +65,68 @@
             const fd = window.FILTER_DATA;
             const years = fd.years || [];
             const sems = fd.sems || [];
+            const student_years = fd.student_years || [];
+            const branches = fd.branches || [];
+            const sections = fd.sections || [];
             const current = fd.current || {};
+            
+            const handleExport = () => {
+                window.location.href = "/export-students/" + window.location.search;
+            };
 
             return (
                 <div style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <form action="." method="GET" style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <form action="." method="GET" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Academic Year</label>
-                            <select name="academic_year" defaultValue={current.ay} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '120px' }}>
-                                <option value="">All Years</option>
-                                {years.map(y => <option key={y} value={y}>{y}</option>)}
-                            </select>
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Roll Number</label>
+                            <input type="text" name="roll_number" defaultValue={current.roll} placeholder="e.g. 20KB1A42" style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', width: '120px' }} />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Year of Study</label>
-                            <select name="year_sem" defaultValue={current.ys} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '150px' }}>
-                                <option value="">All Semesters</option>
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Year/Sem</label>
+                            <select name="year_sem" defaultValue={current.ys} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '120px' }}>
+                                <option value="">All</option>
                                 {sems.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
-
+                        
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Attendance % (Approx)</label>
-                            <input type="text" name="attendance_search" defaultValue={current.att} placeholder="e.g. 75" style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', width: '100px' }} />
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Student Year</label>
+                            <select name="student_year" defaultValue={current.sy} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '100px' }}>
+                                <option value="">All</option>
+                                {student_years.map(sy => <option key={sy} value={sy}>{sy}</option>)}
+                            </select>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Branch</label>
+                            <select name="branch" defaultValue={current.br} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '100px' }}>
+                                <option value="">All</option>
+                                {branches.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Section</label>
+                            <select name="section" defaultValue={current.sec} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '80px' }}>
+                                <option value="">All</option>
+                                {sections.map(sec => <option key={sec} value={sec}>{sec}</option>)}
+                            </select>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '10px', alignSelf: 'flex-end', marginTop: '5px' }}>
-                            <button type="submit" style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
-                                Apply Filters
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Att % (find)</label>
+                            <input type="text" name="attendance_search" defaultValue={current.att} placeholder="e.g. 75" style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', width: '80px' }} />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', alignSelf: 'flex-end', marginTop: '22px' }}>
+                            <button type="submit" style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
+                                Apply
                             </button>
-                            <a href="?" style={{ color: '#ef4444', textDecoration: 'none', fontSize: '13px', display: 'flex', alignItems: 'center' }}>Clear All</a>
+                            <button type="button" onClick={handleExport} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <i className='bx bx-download'></i> Export CSV
+                            </button>
+                            <a href="?" style={{ color: '#ef4444', textDecoration: 'none', fontSize: '13px', display: 'flex', alignItems: 'center', marginLeft: '5px' }}>Clear All</a>
                         </div>
                     </form>
                 </div>
@@ -341,6 +373,12 @@
                                     <span>Users Registry</span>
                                 </a>
                             </div>
+                            <div className="nav-item">
+                                <a href={window.URLS['bulk_ops']} className="nav-link">
+                                    <i className='bx bx-layer-plus' style={{ color: '#94a3b8' }}></i>
+                                    <span>Bulk Operations</span>
+                                </a>
+                            </div>
 
                             <div className="nav-item logout-item">
                                 <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
@@ -434,15 +472,9 @@
                                         )}
                                         
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={() => setIsRangeModalOpen(true)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <i className='bx bx-move-horizontal'></i> Select by Range
-                                            </button>
-                                            <button onClick={() => setIsAddModalOpen(true)} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <i className='bx bx-list-plus'></i> Paste List
-                                            </button>
-                                            <button onClick={() => setIsAddRangeModalOpen(true)} style={{ background: '#059669', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <i className='bx bx-layer-plus'></i> Add by Range
-                                            </button>
+                                            <a href={window.URLS['bulk_ops']} style={{ textDecoration: 'none', background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <i className='bx bx-link-external'></i> Go To Bulk Operations
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
