@@ -17,9 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
 
+@login_required
+def admin_user_redirect(request):
+    """Redirect non-superusers away from Django admin user list to our custom page."""
+    if not request.user.is_superuser:
+        return redirect('/admin-users/')
+    return redirect('/admin/auth/user/')
 
 urlpatterns = [
+    path('admin/auth/user/', admin_user_redirect),
     path('admin/', admin.site.urls),
     path('', include('counseling.urls')),
 ]

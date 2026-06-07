@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<div style="display:none;">{% load static %}</div>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approvals | Admin Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body style="background:#0f172a;color:#f8fafc;font-family:'Outfit',sans-serif;">
+<div id="root"></div>
+<script>
+window.CUR_USER="{{ user.username|default:'Admin' }}";
+window.USER_ROLE="{{ user_role|default:'ADMIN' }}";
+window.IS_SUPERUSER="{{ is_superuser }}"==="True";
+window.IS_NAMED_COUNSELOR="{{ is_named_counselor }}"==="True";
+window.COUNSELING_DATA=JSON.parse('{{ counseling_json|escapejs|default:"[]" }}');
+window.GRIEVANCE_DATA=JSON.parse('{{ grievance_json|escapejs|default:"[]" }}');
+window.INITIAL_TAB=new URLSearchParams(window.location.search).get('tab')||'counseling';
+window.FILTER_OPTS=JSON.parse('{{ filter_opts|escapejs|default:"{}" }}');
+window.URLS={'dashboard':"{% url 'admin_dashboard' %}",'approvals':"{% url 'admin_approvals' %}",'student_search':"{% url 'student_search' %}",'users':"{% url 'admin_users' %}",'bulk_ops':"{% url 'admin_bulk_manage' %}",'export':"{% url 'admin_export' %}",'django_admin':'/admin/','logout':"{% url 'logout' %}"};
+window.INLINE_APPROVE_URL="{% url 'inline_approve' %}";
+window.CSRF_TOKEN="{{ csrf_token }}";
+</script>
+{% verbatim %}
+<script type="text/babel">
+const {useState,useMemo}=React;
+const BRANCHES=["CSE","AIDS","ECE","EEE","MECH","CIVIL","IT","CHEM"];
+const SECTIONS=["A","B","C","D","E","F","G","H","I","J"];
+const YEAR_SEMS=["1-1","1-2","2-1","2-2","3-1","3-2","4-1","4-2"];
+const NAV=[
+  {key:"dashboard",label:"Home",icon:"bxs-dashboard",active:false},
+  {key:"approvals",label:"Approvals",icon:"bx-list-check",active:true},
+  {key:"student_search",label:"Student Search",icon:"bx-search-alt-2",active:false},
+  {key:"users",label:"Users",icon:"bx-group",active:false},
+  {key:"bulk_ops",label:"Bulk Operations",icon:"bx-layer-plus",active:false},
+  {key:"export",label:"Export CSV",icon:"bx-export",active:false},
+  {key:"django_admin",label:"Admin Panel",icon:"bxs-cog",active:false,superOnly:true},
+];
+const Badge=({status})=>{
+  const m={"Pending":{bg:"#78350f",t:"#fef3c7"},"Approved":{bg:"#14532d",t:"#dcfce7"},"Rejected":{bg:"#7f1d1d",t:"#fee2e2"},"Resolved":{bg:"#064e3b",t:"#d1fae5"}};
+  const c=m[status]||m["Pending"];
+  return <span style={{display:"inline-block",padding:"3px 10px",borderRadius:"12px",fontSize:"11px",fontWeight:"700",background:c.bg,color:c.t,textTransform:"uppercase"}}>{status}</span>;
+};
+const myStatus=(item,type)=>{
+  const r=window.USER_ROLE;
+  if(type==="counseling"){if(r==="COUNSELOR")return item.counselor_approval;if(r==="HOD")return item.hod_approval;if(r==="INCHARGE")return item.incharge_approval;if(r==="DIRECTOR")return item.director_approval;return item.approval_status;}
+  if(r==="COUNSELOR")return item.counselor_approval;if(r==="HOD")return item.hod_approval;if(r==="INCHARGE")return item.incharge_approval;if(r==="DIRECTOR")return item.director_approval;return item.status;
+};
+const doApprove=async(type,id,action,onDone)=>{
+  const res=await fetch(window.INLINE_APPROVE_URL,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":window.CSRF_TOKEN},body:JSON.stringify({type,id,action,target_role:window.USER_ROLE})});
+  const data=await res.json();
+  if(data.success)onDone(data);else alert("Error: "+data.error);
+};
+const ActionButtons=({item,type,onUpdate})=>{
+  const [busy,setBusy]=useState(null);
+  const status=myStatus(item,type);
+  const handle=async(action)=>{setBusy(action);await doApprove(type,item.id,action,(d)=>{onUpdate(item.id,d);});setBusy(null);};
+  return(
+    <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+      <a href={"/view-form/"+(type==="counseling"?"counseling":"grievance")+"/"+item.id+"/"} style={{padding:"5px 10px",background:"#334155",color:"#94a3b8",borderRadius:"6px",textDecoration:"none",fontSize:"11px",fontWeight:"600",display:"inline-flex",alignItems:"center",gap:"4px"}}><i className="bx bx-show"></i>View</a>
+      <button onClick={()=>handle("Approved")} disabled={busy!==null||status==="Approved"} style={{padding:"5px 12px",background:status==="Approved"?"#14532d":"#059669",color:"#fff",border:"none",borderRadius:"6px",cursor:status==="Approved"?"default":"pointer",fontSize:"11px",fontWeight:"700",display:"inline-flex",alignItems:"center",gap:"4px"}}>
+        {busy==="Approved"?<i className="bx bx-loader-alt bx-spin"></i>:<i className="bx bx-check"></i>}
+        {busy==="Approved"?"Wait":status==="Approved"?"Approved":"Approve"}
+      </button>
+      <button onClick={()=>handle("Rejected")} disabled={busy!==null||status==="Rejected"} style={{padding:"5px 12px",background:status==="Rejected"?"#7f1d1d":"#ef4444",color:"#fff",border:"none",borderRadius:"6px",cursor:status==="Rejected"?"default":"pointer",fontSize:"11px",fontWeight:"700",display:"inline-flex",alignItems:"center",gap:"4px"}}>
+        {busy==="Rejected"?<i className="bx bx-loader-alt bx-spin"></i>:<i className="bx bx-x"></i>}
+        {busy==="Rejected"?"Wait":status==="Rejected"?"Rejected":"Reject"}
+      </button>
+    </div>
+  );
+};
+
+const ApprovalsPage=()=>{
+  const [activeTab,setActiveTab]=useState(window.INITIAL_TAB);
+  const [searchInput,setSearchInput]=useState("");
+  const [searchQuery,setSearchQuery]=useState("");
+  const [statusFilter,setStatusFilter]=useState("all");
+  const [appliedStatus,setAppliedStatus]=useState("all");
+  const [sortBy,setSortBy]=useState("date");
+  const [appliedSort,setAppliedSort]=useState("date");
+  const [rangeStart,setRangeStart]=useState("");
+  const [rangeEnd,setRangeEnd]=useState("");
+  const [rangeApplied,setRangeApplied]=useState(false);
+  const [showRangeModal,setShowRangeModal]=useState(false);
+  const [modalBranch,setModalBranch]=useState("");
+  const [modalSection,setModalSection]=useState("");
+  const [modalYearSem,setModalYearSem]=useState("");
+  const [modalCounselor,setModalCounselor]=useState("");
+  const [counselingData,setCounselingData]=useState(window.COUNSELING_DATA);
+  const [grievanceData,setGrievanceData]=useState(window.GRIEVANCE_DATA);
+
+  const autofill=(branch,section,yearSem)=>{
+    const map=(window.FILTER_OPTS||{}).counselor_map||{};
+    const found=map[branch+"|"+section+"|"+yearSem]||map[branch+"|"+section+"|"]||map[branch+"||"]||"";
+    setModalCounselor(found);
+  };
+  const handleApply=()=>{setSearchQuery(searchInput);setAppliedStatus(statusFilter);setAppliedSort(sortBy);setRangeApplied(!!(rangeStart.trim()||rangeEnd.trim()));};
+  const handleReset=()=>{setSearchInput("");setSearchQuery("");setStatusFilter("all");setAppliedStatus("all");setSortBy("date");setAppliedSort("date");setRangeStart("");setRangeEnd("");setRangeApplied(false);};
+  const onCounselingUpdate=(id,data)=>setCounselingData(p=>p.map(i=>i.id===id?{...i,...data}:i));
+  const onGrievanceUpdate=(id,data)=>setGrievanceData(p=>p.map(i=>i.id===id?{...i,...data}:i));
+
+  const applyRange=(d,type)=>{
+    if(!rangeApplied||(!rangeStart.trim()&&!rangeEnd.trim()))return d;
+    const s=rangeStart.trim().toUpperCase(),e=rangeEnd.trim().toUpperCase();
+    return d.filter(i=>{const r=(i.roll_number||"").toUpperCase();if(s&&e)return r>=s&&r<=e;if(s)return r>=s;return r<=e;});
+  };
+
+  const filteredCounseling=useMemo(()=>{
+    let d=[...counselingData];
+    if(searchQuery){const q=searchQuery.toLowerCase();d=d.filter(i=>i.roll_number.toLowerCase().includes(q)||i.student_name.toLowerCase().includes(q)||(i.counselor_name&&i.counselor_name.toLowerCase().includes(q)));}
+    if(appliedStatus!=="all")d=d.filter(i=>myStatus(i,"counseling")===appliedStatus);
+    d=applyRange(d,"counseling");
+    if(appliedSort==="date")d.sort((a,b)=>new Date(b.last_submission_date)-new Date(a.last_submission_date));
+    if(appliedSort==="roll")d.sort((a,b)=>a.roll_number.localeCompare(b.roll_number));
+    if(appliedSort==="name")d.sort((a,b)=>a.student_name.localeCompare(b.student_name));
+    return d;
+  },[counselingData,searchQuery,appliedStatus,appliedSort,rangeApplied,rangeStart,rangeEnd]);
+
+  const filteredGrievances=useMemo(()=>{
+    let d=[...grievanceData];
+    if(searchQuery){const q=searchQuery.toLowerCase();d=d.filter(i=>i.roll_number.toLowerCase().includes(q)||i.grievance_type.toLowerCase().includes(q));}
+    if(appliedStatus!=="all")d=d.filter(i=>myStatus(i,"grievance")===appliedStatus);
+    d=applyRange(d,"grievance");
+    if(appliedSort==="date")d.sort((a,b)=>new Date(b.submission_date)-new Date(a.submission_date));
+    if(appliedSort==="roll")d.sort((a,b)=>a.roll_number.localeCompare(b.roll_number));
+    return d;
+  },[grievanceData,searchQuery,appliedStatus,appliedSort,rangeApplied,rangeStart,rangeEnd]);
+
+  const inp={width:"100%",padding:"10px 14px",background:"#0f172a",border:"1px solid #334155",borderRadius:"8px",color:"#fff",fontSize:"14px",outline:"none"};
+  const lbl={display:"block",marginBottom:"6px",fontSize:"11px",color:"#64748b",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"};
+  const pendingC=counselingData.filter(i=>myStatus(i,"counseling")==="Pending").length;
+  const pendingG=grievanceData.filter(i=>myStatus(i,"grievance")==="Pending").length;
+  const TH=({children,center})=><th style={{padding:"13px 14px",textAlign:center?"center":"left",color:"#64748b",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px",whiteSpace:"nowrap",borderBottom:"2px solid #334155",background:"#0f172a"}}>{children}</th>;
+
+  const RangeModal=()=>{
+    if(!showRangeModal)return null;
+    const isSA=window.IS_SUPERUSER;
+    const sinp={width:"100%",padding:"10px",background:"#0f172a",border:"1px solid #334155",borderRadius:"8px",color:"#fff",fontSize:"13px"};
+    const slbl={display:"block",marginBottom:"5px",fontSize:"11px",color:"#64748b",fontWeight:"700",textTransform:"uppercase"};
+    return(
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={e=>e.target===e.currentTarget&&setShowRangeModal(false)}>
+        <div style={{background:"#1e293b",border:"1px solid #334155",borderRadius:"16px",padding:"28px",width:"90%",maxWidth:"520px",boxShadow:"0 25px 50px rgba(0,0,0,0.5)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+            <h2 style={{margin:0,color:"#fff",fontSize:"18px",fontWeight:"700",display:"flex",alignItems:"center",gap:"10px"}}>
+              <i className="bx bx-selection" style={{color:"#6366f1"}}></i>Select by Range
+            </h2>
+            <button onClick={()=>setShowRangeModal(false)} style={{background:"transparent",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:"22px",lineHeight:1}}>&times;</button>
+          </div>
+          {isSA&&(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"12px",marginBottom:"16px"}}>
+              <div><label style={slbl}>Branch</label>
+                <select value={modalBranch} onChange={e=>{setModalBranch(e.target.value);autofill(e.target.value,modalSection,modalYearSem);}} style={sinp}>
+                  <option value="">All</option>{BRANCHES.map(b=><option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+              <div><label style={slbl}>Section</label>
+                <select value={modalSection} onChange={e=>{setModalSection(e.target.value);autofill(modalBranch,e.target.value,modalYearSem);}} style={sinp}>
+                  <option value="">All</option>{SECTIONS.map(s=><option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div><label style={slbl}>Year-Sem</label>
+                <select value={modalYearSem} onChange={e=>{setModalYearSem(e.target.value);autofill(modalBranch,modalSection,e.target.value);}} style={sinp}>
+                  <option value="">All</option>{YEAR_SEMS.map(y=><option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"16px"}}>
+            <div><label style={slbl}>Roll Range Start</label>
+              <input type="text" placeholder="e.g. 22KB1A4201" value={rangeStart} onChange={e=>setRangeStart(e.target.value)} style={{...sinp,fontFamily:"monospace"}}/>
+            </div>
+            <div><label style={slbl}>Roll Range End</label>
+              <input type="text" placeholder="e.g. 22KB1A4260" value={rangeEnd} onChange={e=>setRangeEnd(e.target.value)} style={{...sinp,fontFamily:"monospace"}}/>
+            </div>
+          </div>
+          {isSA&&(
+            <div style={{marginBottom:"16px"}}>
+              <label style={slbl}>Counselor (auto-filled from branch/section/year)</label>
+              <input type="text" placeholder="Auto-filled or type manually" value={modalCounselor} onChange={e=>setModalCounselor(e.target.value)} style={{...sinp,border:"1px solid #6366f1"}}/>
+              {modalCounselor&&<div style={{marginTop:"4px",fontSize:"12px",color:"#6366f1"}}>Counselor: {modalCounselor}</div>}
+            </div>
+          )}
+          <div style={{display:"flex",gap:"10px",justifyContent:"flex-end"}}>
+            <button onClick={()=>{setRangeStart("");setRangeEnd("");setRangeApplied(false);setShowRangeModal(false);}} style={{padding:"10px 18px",background:"#334155",color:"#94a3b8",border:"none",borderRadius:"8px",cursor:"pointer",fontWeight:"600",fontSize:"14px"}}>Clear</button>
+            <button onClick={()=>{setRangeApplied(!!(rangeStart.trim()||rangeEnd.trim()));setShowRangeModal(false);}} style={{padding:"10px 24px",background:"#6366f1",color:"#fff",border:"none",borderRadius:"8px",cursor:"pointer",fontWeight:"700",fontSize:"14px",display:"flex",alignItems:"center",gap:"8px"}}>
+              <i className="bx bx-check"></i>Apply Range
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return(
+    <div className="dashboard-layout">
+      <aside className="sidebar">
+        <div className="logo"><i className="bx bx-check-shield" style={{color:"#818cf8",fontSize:"24px"}}></i><span>ADMIN PANEL</span></div>
+        <nav className="nav-links">
+          {NAV.map(item=>{
+            if(item.superOnly&&!window.IS_SUPERUSER)return null;
+            return(<div key={item.key} className="nav-item"><a href={window.URLS[item.key]||"#"} className={"nav-link"+(item.active?" active":"")}><i className={"bx "+item.icon} style={{color:item.active?"white":"#94a3b8"}}></i><span>{item.label}</span></a></div>);
+          })}
+          <div className="nav-item logout-item"><a href={window.URLS["logout"]} className="nav-link logout-link-sidebar"><i className="bx bx-log-out" style={{color:"#ef4444"}}></i><span>Exit Portal</span></a></div>
+        </nav>
+      </aside>
+      <main className="main-content">
+        <header className="header">
+          <div className="welcome-section">
+            <h1 style={{color:"#fff"}}>Approval Management</h1>
+            <p style={{color:"#94a3b8"}}>{window.IS_NAMED_COUNSELOR?"Showing your assigned students only.":"Review and approve counseling forms and grievances."}</p>
+          </div>
+          <div className="profile-chip" style={{background:"#1e293b",border:"1px solid rgba(255,255,255,0.1)"}}>
+            <div className="avatar" style={{background:"#6366f1"}}>{(window.CUR_USER||"A")[0].toUpperCase()}</div>
+            <span>{window.CUR_USER||"Admin"}</span>
+          </div>
+        </header>
+        <div style={{display:"flex",gap:"12px",marginBottom:"20px",flexWrap:"wrap"}}>
+          {[{label:"Total Counseling",val:counselingData.length,color:"#6366f1"},{label:"Pending Counseling",val:pendingC,color:"#f59e0b"},{label:"Total Grievances",val:grievanceData.length,color:"#f43f5e"},{label:"Pending Grievances",val:pendingG,color:"#ef4444"}].map(c=>(
+            <div key={c.label} style={{background:"#1e293b",border:"1px solid #334155",borderRadius:"10px",padding:"12px 20px"}}>
+              <div style={{fontSize:"11px",color:"#64748b",fontWeight:"600",textTransform:"uppercase"}}>{c.label}</div>
+              <div style={{fontSize:"24px",fontWeight:"800",color:c.color}}>{c.val}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:"8px",borderBottom:"2px solid #1e293b",marginBottom:"0"}}>
+          {[{key:"counseling",label:"Counseling Forms",icon:"bx-file-doc",count:counselingData.length},{key:"grievances",label:"Grievances",icon:"bx-error-alt",count:grievanceData.length}].map(tab=>(
+            <button key={tab.key} onClick={()=>{setActiveTab(tab.key);handleReset();}} style={{padding:"12px 22px",background:activeTab===tab.key?"#6366f1":"transparent",color:activeTab===tab.key?"#fff":"#94a3b8",border:"none",borderRadius:"8px 8px 0 0",cursor:"pointer",fontWeight:"600",fontSize:"14px",display:"flex",alignItems:"center",gap:"8px"}}>
+              <i className={"bx "+tab.icon}></i>{tab.label}
+              <span style={{background:activeTab===tab.key?"rgba(255,255,255,0.2)":"#334155",borderRadius:"10px",padding:"1px 8px",fontSize:"12px"}}>{tab.count}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{background:"#1e293b",padding:"18px 20px",borderRadius:"0 12px 12px 12px",marginBottom:"16px",border:"1px solid #334155"}}>
+          <div style={{display:"flex",gap:"12px",alignItems:"flex-end",flexWrap:"wrap"}}>
+            <div style={{flex:2,minWidth:"180px"}}>
+              <label style={lbl}>Search (Roll / Name / Counselor)</label>
+              <div style={{position:"relative"}}>
+                <i className="bx bx-search" style={{position:"absolute",left:"10px",top:"50%",transform:"translateY(-50%)",color:"#64748b"}}></i>
+                <input type="text" placeholder={activeTab==="counseling"?"Roll, name, counselor...":"Roll, type..."} value={searchInput} onChange={e=>setSearchInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleApply()} style={{...inp,paddingLeft:"32px"}}/>
+              </div>
+            </div>
+            <div style={{flex:1,minWidth:"130px"}}>
+              <label style={lbl}>Status</label>
+              <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={inp}>
+                <option value="all">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                {activeTab==="grievances"&&<option value="Resolved">Resolved</option>}
+              </select>
+            </div>
+            <div style={{flex:1,minWidth:"130px"}}>
+              <label style={lbl}>Sort By</label>
+              <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={inp}>
+                <option value="date">Date (Newest)</option>
+                <option value="roll">Roll Number</option>
+                <option value={activeTab==="counseling"?"name":"type"}>{activeTab==="counseling"?"Name":"Type"}</option>
+              </select>
+            </div>
+            <div>
+              <label style={{...lbl,opacity:0}}>x</label>
+              <button onClick={()=>setShowRangeModal(true)} style={{padding:"10px 16px",background:rangeApplied?"#6366f1":"#334155",color:rangeApplied?"#fff":"#94a3b8",border:"none",borderRadius:"8px",cursor:"pointer",fontWeight:"700",fontSize:"13px",display:"flex",alignItems:"center",gap:"6px",whiteSpace:"nowrap"}}>
+                <i className="bx bx-selection"></i>{rangeApplied?"Range Active":"Select by Range"}
+              </button>
+            </div>
+            <div><label style={{...lbl,opacity:0}}>x</label><button onClick={handleApply} style={{padding:"10px 20px",background:"#6366f1",color:"#fff",border:"none",borderRadius:"8px",cursor:"pointer",fontWeight:"700",fontSize:"14px",display:"flex",alignItems:"center",gap:"6px",whiteSpace:"nowrap"}}><i className="bx bx-search-alt"></i>Apply</button></div>
+            <div><label style={{...lbl,opacity:0}}>x</label><button onClick={handleReset} style={{padding:"10px 16px",background:"#334155",color:"#94a3b8",border:"none",borderRadius:"8px",cursor:"pointer",fontWeight:"600",fontSize:"14px",display:"flex",alignItems:"center",gap:"6px",whiteSpace:"nowrap"}}><i className="bx bx-reset"></i>Reset</button></div>
+          </div>
+          {(searchQuery||appliedStatus!=="all"||rangeApplied)&&(
+            <div style={{display:"flex",gap:"8px",marginTop:"10px",flexWrap:"wrap",alignItems:"center"}}>
+              <span style={{fontSize:"12px",color:"#64748b"}}>Active:</span>
+              {searchQuery&&<span style={{background:"#312e81",color:"#a5b4fc",padding:"2px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:"600"}}>"{searchQuery}"</span>}
+              {appliedStatus!=="all"&&<span style={{background:"#312e81",color:"#a5b4fc",padding:"2px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:"600"}}>{appliedStatus}</span>}
+              {rangeApplied&&<span style={{background:"#312e81",color:"#a5b4fc",padding:"2px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:"600"}}>Range: {rangeStart||"*"} to {rangeEnd||"*"}</span>}
+            </div>
+          )}
+        </div>
+        <div style={{marginBottom:"8px",color:"#64748b",fontSize:"13px"}}>Showing {activeTab==="counseling"?filteredCounseling.length:filteredGrievances.length} result(s)</div>
+
+        {activeTab==="counseling"?(
+          <div style={{background:"#1e293b",borderRadius:"12px",overflow:"hidden",border:"1px solid #334155"}}>
+            {filteredCounseling.length===0?(
+              <div style={{padding:"60px",textAlign:"center",color:"#94a3b8"}}><i className="bx bx-folder-open" style={{fontSize:"48px",display:"block",marginBottom:"10px"}}></i><p style={{margin:0}}>No counseling forms match your filters</p></div>
+            ):(
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead><tr><TH>Roll Number</TH><TH>Student Name</TH><TH>Counselor</TH><TH>Branch/Sec</TH><TH center>Form</TH><TH center>Status</TH><TH>Submitted</TH><TH center>Actions</TH></tr></thead>
+                  <tbody>
+                    {filteredCounseling.map(item=>(
+                      <tr key={item.id} style={{borderBottom:"1px solid #0f172a",transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(99,102,241,0.05)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                        <td style={{padding:"13px 14px",color:"#818cf8",fontWeight:"700",fontFamily:"monospace",fontSize:"13px"}}>{item.roll_number}</td>
+                        <td style={{padding:"13px 14px",color:"#fff",fontWeight:"500"}}>{item.student_name}</td>
+                        <td style={{padding:"13px 14px",color:"#94a3b8",fontSize:"13px"}}>{item.counselor_name||"—"}</td>
+                        <td style={{padding:"13px 14px",color:"#94a3b8",fontSize:"13px"}}>{item.branch?(item.branch+(item.section?" / "+item.section:"")):"—"}</td>
+                        <td style={{padding:"13px 14px",textAlign:"center"}}>{item.submitted?<span style={{background:"#14532d",color:"#dcfce7",padding:"3px 8px",borderRadius:"10px",fontSize:"10px",fontWeight:"700"}}>SUBMITTED</span>:<span style={{background:"#1e293b",color:"#475569",padding:"3px 8px",borderRadius:"10px",fontSize:"10px",fontWeight:"700"}}>NOT YET</span>}</td>
+                        <td style={{padding:"13px 14px",textAlign:"center"}}><Badge status={item.approval_status}/></td>
+                        <td style={{padding:"13px 14px",color:"#64748b",fontSize:"12px",whiteSpace:"nowrap"}}>{item.last_submission_date?new Date(item.last_submission_date).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—"}</td>
+                        <td style={{padding:"13px 14px"}}><ActionButtons item={item} type="counseling" onUpdate={onCounselingUpdate}/></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ):(
+          <div style={{background:"#1e293b",borderRadius:"12px",overflow:"hidden",border:"1px solid #334155"}}>
+            {filteredGrievances.length===0?(
+              <div style={{padding:"60px",textAlign:"center",color:"#94a3b8"}}><i className="bx bx-folder-open" style={{fontSize:"48px",display:"block",marginBottom:"10px"}}></i><p style={{margin:0}}>No grievances match your filters</p></div>
+            ):(
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead><tr><TH>Roll Number</TH><TH>Type</TH><TH>Incident Date</TH><TH center>Status</TH><TH>Submitted</TH><TH center>Actions</TH></tr></thead>
+                  <tbody>
+                    {filteredGrievances.map(item=>(
+                      <tr key={item.id} style={{borderBottom:"1px solid #0f172a",transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(244,63,94,0.05)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                        <td style={{padding:"13px 14px",color:"#818cf8",fontWeight:"700",fontFamily:"monospace",fontSize:"13px"}}>{item.roll_number}</td>
+                        <td style={{padding:"13px 14px",color:"#fff",fontWeight:"500"}}>{item.grievance_type}</td>
+                        <td style={{padding:"13px 14px",color:"#94a3b8",fontSize:"13px"}}>{item.incident_date?new Date(item.incident_date).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—"}</td>
+                        <td style={{padding:"13px 14px",textAlign:"center"}}><Badge status={item.status}/></td>
+                        <td style={{padding:"13px 14px",color:"#64748b",fontSize:"12px",whiteSpace:"nowrap"}}>{item.submission_date?new Date(item.submission_date).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—"}</td>
+                        <td style={{padding:"13px 14px"}}><ActionButtons item={item} type="grievance" onUpdate={onGrievanceUpdate}/></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        <RangeModal/>
+      </main>
+    </div>
+  );
+};
+window.addEventListener("load",()=>{ReactDOM.createRoot(document.getElementById("root")).render(<ApprovalsPage/>);});
+</script>
+{% endverbatim %}
+</body>
+</html>

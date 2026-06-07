@@ -53,7 +53,12 @@
             border: 1px solid #e2e8f0;
         }
 
-        input,
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        input[type="email"],
+        input[type="month"],
+        input[type="checkbox"],
         select,
         textarea {
             background-color: #f8fafc !important;
@@ -64,6 +69,14 @@
             padding: 8px !important;
             border-radius: 6px !important;
             font-family: inherit;
+        }
+
+        /* Ensure workflow buttons and their forms are always clickable */
+        .workflow-actions,
+        .workflow-actions *,
+        .workflow-btn {
+            pointer-events: auto !important;
+            cursor: pointer !important;
         }
 
         .back-btn {

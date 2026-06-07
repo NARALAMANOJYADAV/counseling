@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<div style="display:none;">{% load static %}</div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Data | Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body style="background:#0f172a; color:#f8fafc; font-family:'Outfit',sans-serif;">
+<div id="root"></div>
+
+<script>
+    window.CUR_USER    = "{{ user.username|default:'Admin' }}";
+    window.IS_SUPERUSER = "{{ is_superuser }}" === "True";
+    window.PREVIEW_DATA = JSON.parse('{{ preview_json|escapejs|default:"[]" }}');
+    window.FILTER_DATA  = JSON.parse('{{ filter_data|escapejs|default:"{}" }}');
+    window.TOTAL_COUNT  = Number("{{ total_count|default:0 }}");
+    window.URLS = {
+        'dashboard':      "{% url 'admin_dashboard' %}",
+        'approvals':      "{% url 'admin_approvals' %}",
+        'student_search': "{% url 'student_search' %}",
+        'users':          "{% url 'admin_users' %}",
+        'bulk_ops':       "{% url 'admin_bulk_manage' %}",
+        'export':         "{% url 'admin_export' %}",
+        'export_csv':     "{% url 'export_students_csv' %}",
+        'django_admin':   "/admin/",
+        'logout':         "{% url 'logout' %}"
+    };
+</script>
+
+{% verbatim %}
+<script type="text/babel">
+    const { useState } = React;
+
+    const NAV = [
+        { key:'dashboard',      label:'Home',            icon:'bxs-dashboard', active:false },
+        { key:'approvals',      label:'Approvals',       icon:'bx-list-check', active:false },
+        { key:'student_search', label:'Student Search',  icon:'bx-search-alt-2', active:false },
+        { key:'users',          label:'Users',           icon:'bx-group',      active:false },
+        { key:'bulk_ops',       label:'Bulk Operations', icon:'bx-layer-plus', active:false },
+        { key:'export',         label:'Export CSV',      icon:'bx-export',     active:true  },
+        { key:'django_admin',   label:'Admin Panel',     icon:'bxs-cog',       active:false, superOnly:true },
+    ];
+
+    const ExportPage = () => {
+        const fd = window.FILTER_DATA;
+
+        const BRANCHES   = ['CSE','AIDS','ECE','EEE','MECH','CIVIL','IT','CHEM'];
+        const SECTIONS   = ['A','B','C','D','E','F','G','H','I','J'];
+        const YEAR_SEMS  = ['1-1','1-2','2-1','2-2','3-1','3-2','4-1','4-2'];
+        const ACAD_YEARS = (fd.acad_years && fd.acad_years.length > 0)
+            ? fd.acad_years
+            : ['2022-2023','2023-2024','2024-2025','2025-2026','2026-2027'];
+
+        const [roll,    setRoll]    = useState('');
+        const [branch,  setBranch]  = useState('');
+        const [section, setSection] = useState('');
+        const [sem,     setSem]     = useState('');
+        const [acad,    setAcad]    = useState('');
+        const [preview, setPreview] = useState(window.PREVIEW_DATA);
+        const [loading, setLoading] = useState(false);
+        const [searched, setSearched] = useState(false);
+
+        /* build query string from current filters */
+        const buildQuery = () => {
+            const p = new URLSearchParams();
+            if (roll)    p.set('roll_number',    roll.trim());
+            if (branch)  p.set('branch',         branch);
+            if (section) p.set('section',        section);
+            if (sem)     p.set('year_sem',       sem);
+            if (acad)    p.set('academic_year',  acad);
+            return p.toString();
+        };
+
+        const handlePreview = async () => {
+            setLoading(true);
+            const qs = buildQuery();
+            const res = await fetch(`${window.URLS['export']}?${qs}&preview=1`);
+            const data = await res.json();
+            setPreview(data.rows || []);
+            setSearched(true);
+            setLoading(false);
+        };
+
+        const handleReset = () => {
+            setRoll(''); setBranch(''); setSection(''); setSem(''); setAcad('');
+            setPreview([]);
+            setSearched(false);
+        };
+
+        const handleDownload = () => {
+            const qs = buildQuery();
+            window.location.href = `${window.URLS['export_csv']}?${qs}`;
+        };
+
+        const inputStyle = {
+            width:'100%', padding:'10px 14px',
+            background:'#0f172a', border:'1px solid #334155',
+            borderRadius:'8px', color:'#fff', fontSize:'14px', outline:'none'
+        };
+        const labelStyle = {
+            display:'block', marginBottom:'6px',
+            fontSize:'11px', color:'#64748b',
+            fontWeight:'700', textTransform:'uppercase', letterSpacing:'0.8px'
+        };
+
+        return (
+            <div className="dashboard-layout">
+                {/* Sidebar */}
+                <aside className="sidebar">
+                    <div className="logo">
+                        <i className='bx bxs-shield-quarter' style={{ color:'#818cf8', fontSize:'24px' }}></i>
+                        <span>ADMIN PANEL</span>
+                    </div>
+                    <nav className="nav-links">
+                        {NAV.map(item => {
+                            if (item.superOnly && !window.IS_SUPERUSER) return null;
+                            return (
+                                <div key={item.key} className="nav-item">
+                                    <a href={window.URLS[item.key]||'#'} className={`nav-link${item.active?' active':''}`}>
+                                        <i className={`bx ${item.icon}`} style={{ color: item.active?'white':'#94a3b8' }}></i>
+                                        <span>{item.label}</span>
+                                    </a>
+                                </div>
+                            );
+                        })}
+                        <div className="nav-item logout-item">
+                            <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
+                                <i className='bx bx-log-out' style={{ color:'#ef4444' }}></i>
+                                <span>Exit Portal</span>
+                            </a>
+                        </div>
+                    </nav>
+                </aside>
+
+                {/* Main */}
+                <main className="main-content">
+                    <header className="header">
+                        <div className="welcome-section">
+                            <h1 style={{ color:'#fff' }}>Export Student Data</h1>
+                            <p>Filter, preview, then download as CSV.</p>
+                        </div>
+                        <div className="profile-chip" style={{ background:'#1e293b', border:'1px solid rgba(255,255,255,0.1)' }}>
+                            <div className="avatar" style={{ background:'#6366f1' }}>{(window.CUR_USER||'A')[0].toUpperCase()}</div>
+                            <span>{window.CUR_USER||'Admin'}</span>
+                        </div>
+                    </header>
+
+                    {/* Stats row */}
+                    <div style={{ display:'flex', gap:'12px', marginBottom:'24px', flexWrap:'wrap' }}>
+                        <div style={{ background:'#1e293b', border:'1px solid #334155', borderRadius:'10px', padding:'14px 22px' }}>
+                            <div style={{ fontSize:'11px', color:'#64748b', fontWeight:'700', textTransform:'uppercase' }}>Total Students</div>
+                            <div style={{ fontSize:'28px', fontWeight:'800', color:'#6366f1' }}>{window.TOTAL_COUNT}</div>
+                        </div>
+                        <div style={{ background:'#1e293b', border:'1px solid #334155', borderRadius:'10px', padding:'14px 22px' }}>
+                            <div style={{ fontSize:'11px', color:'#64748b', fontWeight:'700', textTransform:'uppercase' }}>Showing in Preview</div>
+                            <div style={{ fontSize:'28px', fontWeight:'800', color:'#10b981' }}>{preview.length}</div>
+                        </div>
+                    </div>
+
+                    {/* Filter card */}
+                    <div style={{ background:'#1e293b', border:'1px solid #334155', borderRadius:'12px', padding:'24px', marginBottom:'24px' }}>
+                        <h2 style={{ color:'#fff', margin:'0 0 20px 0', fontSize:'16px', fontWeight:'700', display:'flex', alignItems:'center', gap:'8px' }}>
+                            <i className='bx bx-filter-alt' style={{ color:'#6366f1' }}></i> Filter Options
+                        </h2>
+
+                        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:'16px', marginBottom:'20px' }}>
+                            <div>
+                                <label style={labelStyle}>Roll Number</label>
+                                <input type="text" placeholder="e.g. 22KB1A4201" value={roll} onChange={e=>setRoll(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handlePreview()} style={inputStyle} />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Branch / Department</label>
+                                <select value={branch} onChange={e=>setBranch(e.target.value)} style={inputStyle}>
+                                    <option value="">All Branches</option>
+                                    {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Section</label>
+                                <select value={section} onChange={e=>setSection(e.target.value)} style={inputStyle}>
+                                    <option value="">All Sections</option>
+                                    {SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Year - Semester</label>
+                                <select value={sem} onChange={e=>setSem(e.target.value)} style={inputStyle}>
+                                    <option value="">All Semesters</option>
+                                    {YEAR_SEMS.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Academic Year</label>
+                                <select value={acad} onChange={e=>setAcad(e.target.value)} style={inputStyle}>
+                                    <option value="">All Academic Years</option>
+                                    {ACAD_YEARS.map(a => <option key={a} value={a}>{a}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
+                            <button onClick={handlePreview} disabled={loading}
+                                style={{ padding:'11px 24px', background:'#6366f1', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'700', fontSize:'14px', display:'flex', alignItems:'center', gap:'8px' }}>
+                                <i className='bx bx-search-alt'></i>
+                                {loading ? 'Loading…' : 'Preview Results'}
+                            </button>
+
+                            <button onClick={handleReset}
+                                style={{ padding:'11px 20px', background:'#334155', color:'#94a3b8', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'14px', display:'flex', alignItems:'center', gap:'8px' }}>
+                                <i className='bx bx-reset'></i> Reset
+                            </button>
+
+                            <button onClick={handleDownload}
+                                style={{ padding:'11px 24px', background:'#059669', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'700', fontSize:'14px', display:'flex', alignItems:'center', gap:'8px', marginLeft:'auto' }}>
+                                <i className='bx bx-download'></i>
+                                Download CSV ({preview.length} rows)
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Preview table */}
+                    <div style={{ background:'#1e293b', border:'1px solid #334155', borderRadius:'12px', overflow:'hidden' }}>
+                        <div style={{ padding:'16px 20px', borderBottom:'1px solid #334155', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                            <h3 style={{ margin:0, color:'#fff', fontSize:'15px', fontWeight:'700', display:'flex', alignItems:'center', gap:'8px' }}>
+                                <i className='bx bx-table' style={{ color:'#6366f1' }}></i>
+                                Data Preview
+                                {searched && <span style={{ fontSize:'12px', color:'#64748b', fontWeight:'400' }}> — filtered results</span>}
+                            </h3>
+                            <span style={{ fontSize:'12px', color:'#64748b' }}>{preview.length} record(s)</span>
+                        </div>
+
+                        {preview.length === 0 ? (
+                            <div style={{ padding:'60px 20px', textAlign:'center', color:'#94a3b8' }}>
+                                <i className='bx bx-filter-alt' style={{ fontSize:'48px', display:'block', marginBottom:'12px', color:'#334155' }}></i>
+                                {searched
+                                    ? <p style={{ margin:0 }}>No students match the selected filters.</p>
+                                    : <>
+                                        <p style={{ margin:'0 0 6px 0', color:'#fff', fontWeight:'600' }}>Select your filters above</p>
+                                        <p style={{ margin:0, fontSize:'13px' }}>Choose branch, section, year, semester or academic year — then click <strong style={{color:'#6366f1'}}>Preview Results</strong> to see matching students before downloading.</p>
+                                      </>
+                                }
+                            </div>
+                        ) : (
+                            <div style={{ overflowX:'auto' }}>
+                                <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                                    <thead>
+                                        <tr style={{ background:'#0f172a' }}>
+                                            {['#','Roll Number','Name','Email','Counselor','Branch','Year','Section','Sem','Acad. Year'].map(h => (
+                                                <th key={h} style={{ padding:'12px 16px', textAlign:'left', color:'#64748b', fontSize:'11px', fontWeight:'700', textTransform:'uppercase', letterSpacing:'0.8px', whiteSpace:'nowrap', borderBottom:'2px solid #334155' }}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {preview.map((row, idx) => (
+                                            <tr key={idx} style={{ borderBottom:'1px solid #0f172a', transition:'background 0.15s' }}
+                                                onMouseEnter={e => e.currentTarget.style.background='rgba(99,102,241,0.05)'}
+                                                onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                                                <td style={{ padding:'12px 16px', color:'#475569', fontSize:'12px' }}>{idx+1}</td>
+                                                <td style={{ padding:'12px 16px', color:'#818cf8', fontWeight:'700', fontFamily:'monospace', fontSize:'13px' }}>{row.roll}</td>
+                                                <td style={{ padding:'12px 16px', color:'#fff' }}>{row.name || <span style={{color:'#475569'}}>—</span>}</td>
+                                                <td style={{ padding:'12px 16px', color:'#94a3b8', fontSize:'13px' }}>{row.email || <span style={{color:'#475569'}}>—</span>}</td>
+                                                <td style={{ padding:'12px 16px', color:'#94a3b8', fontSize:'13px' }}>{row.counselor || <span style={{color:'#475569'}}>—</span>}</td>
+                                                <td style={{ padding:'12px 16px', color:'#94a3b8', fontSize:'13px' }}>{row.branch || <span style={{color:'#475569'}}>—</span>}</td>
+                                                <td style={{ padding:'12px 16px', color:'#94a3b8', fontSize:'13px' }}>{row.year || <span style={{color:'#475569'}}>—</span>}</td>
+                                                <td style={{ padding:'12px 16px', color:'#94a3b8', fontSize:'13px' }}>{row.section || <span style={{color:'#475569'}}>—</span>}</td>
+                                                <td style={{ padding:'12px 16px', color:'#94a3b8', fontSize:'13px' }}>{row.year_sem || <span style={{color:'#475569'}}>—</span>}</td>
+                                                <td style={{ padding:'12px 16px', color:'#94a3b8', fontSize:'13px' }}>{row.academic_year || <span style={{color:'#475569'}}>—</span>}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </main>
+            </div>
+        );
+    };
+
+    window.addEventListener('load', () => {
+        ReactDOM.createRoot(document.getElementById('root')).render(<ExportPage />);
+    });
+</script>
+{% endverbatim %}
+</body>
+</html>

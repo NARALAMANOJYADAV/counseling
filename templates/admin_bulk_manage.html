@@ -1,416 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
 <div style="display:none;">{% load static %}</div>
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk Operations | Admin Portal</title>
-
-    <!-- Modern Typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
-    <!-- Styles from Dashboard -->
-    <link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
-
-    <!-- React & Babel Standalone -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Boxicons CSS -->
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulk Operations | Admin Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
+<body style="background:#0f172a;color:#f8fafc;font-family:'Outfit',sans-serif;">
+<div id="root"></div>
+<script>
+window.CUR_USER="{{ user.username|default:'Admin' }}";
+window.IS_SUPERUSER="{{ is_superuser }}"==="True";
+window.ALL_STUDENTS=JSON.parse('{{ all_students_json|escapejs|default:"[]" }}');
+window.STUDENTS_WITH_INFO=JSON.parse('{{ students_with_info|escapejs|default:"[]" }}');
+window.FILTER_OPTS=JSON.parse('{{ filter_opts|escapejs|default:"{}" }}');
+window.URLS={'dashboard':"{% url 'admin_dashboard' %}",'approvals':"{% url 'admin_approvals' %}",'student_search':"{% url 'student_search' %}",'users':"{% url 'admin_users' %}",'bulk_ops':"{% url 'admin_bulk_manage' %}",'export':"{% url 'admin_export' %}",'django_admin':'/admin/','logout':"{% url 'logout' %}"};
+window.CSRF_TOKEN="{{ csrf_token }}";
+</script>
+{% verbatim %}
+<script type="text/babel">
+const {useState} = React;
 
-<body style="background: #0f172a; color: #f8fafc; font-family: 'Outfit', sans-serif;">
-    <div id="root"></div>
+const BRANCHES = ["CSE","AIDS","ECE","EEE","MECH","CIVIL","IT","CHEM"];
+const SECTIONS = ["A","B","C","D","E","F","G","H","I","J"];
+const YEAR_SEMS = ["1-1","1-2","2-1","2-2","3-1","3-2","4-1","4-2"];
 
-    <script>
-        window.CUR_USER = "{{ user.username|default:'Admin' }}";
-        window.ALL_STUDENTS = JSON.parse('{{ all_students_json|escapejs|default:"[]" }}');
-        window.IS_SUPERUSER = "{{ is_superuser }}" === "True";
-        
-        window.URLS = {
-            'dashboard': "{% url 'admin_dashboard' %}",
-            'counseling': "/admin/counseling/studentcounseling/",
-            'users_admin': "{% url 'admin_users' %}",
-            'bulk_ops': "{% url 'admin_bulk_manage' %}",
-            'logout': "{% url 'logout' %}"
-        };
-        window.CSRF_TOKEN = "{{ csrf_token }}";
-    </script>
+const NAV = [
+  {key:"dashboard",   label:"Home",            icon:"bxs-dashboard",     active:false},
+  {key:"approvals",   label:"Approvals",        icon:"bx-list-check",     active:false},
+  {key:"student_search",label:"Student Search", icon:"bx-search-alt-2",   active:false},
+  {key:"users",       label:"Users",            icon:"bx-group",          active:false},
+  {key:"bulk_ops",    label:"Bulk Operations",  icon:"bx-layer-plus",     active:true},
+  {key:"export",      label:"Export CSV",       icon:"bx-export",         active:false},
+  {key:"django_admin",label:"Admin Panel",      icon:"bxs-cog",           active:false, superOnly:true},
+];
 
-    {% verbatim %}
-    <script type="text/babel">
-        const { useState } = React;
+const inp = {width:"100%",padding:"10px 14px",background:"#0f172a",border:"1px solid #334155",borderRadius:"8px",color:"#fff",fontSize:"14px",outline:"none"};
+const lbl = {display:"block",marginBottom:"6px",fontSize:"11px",color:"#64748b",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"};
 
-        const BulkManagePage = () => {
-            const [counselorName, setCounselorName] = useState("");
-            const [rangeStart, setRangeStart] = useState("");
-            const [rangeEnd, setRangeEnd] = useState("");
-            
-            const [studentYear, setStudentYear] = useState("");
-            const [branch, setBranch] = useState("");
-            const [section, setSection] = useState("");
-            
-            // Single Student State
-            const [singleRoll, setSingleRoll] = useState("");
-            const [singleName, setSingleName] = useState("");
-            const [singleEmail, setSingleEmail] = useState("");
-            
-            const [bulkStudentsText, setBulkStudentsText] = useState("");
-            const [isSubmitting, setIsSubmitting] = useState(false);
+const CARDS = [
+  {id:"assign",   label:"Assign Counselor",   icon:"bx-user-check",      color:"#6366f1", desc:"Assign a counselor to students by branch, section, year or roll range"},
+  {id:"addrange", label:"Add by Range",        icon:"bx-layer-plus",      color:"#059669", desc:"Generate new sequential student accounts from a roll number range"},
+  {id:"selrange", label:"Select by Range",     icon:"bx-move-horizontal", color:"#3b82f6", desc:"Update properties for existing students within a roll number range"},
+  {id:"paste",    label:"Paste List",          icon:"bx-list-plus",       color:"#10b981", desc:"Add multiple students at once using CSV-style text input"},
+  {id:"single",   label:"Add Single Student",  icon:"bx-user-plus",       color:"#f59e0b", desc:"Quickly add one student by entering their details"},
+];
 
-            // Handle Add Single Student
-            const handleAddSingleStudent = async () => {
-                if (!singleRoll.trim()) {
-                    alert("Roll Number is required.");
-                    return;
-                }
-                
-                const students = [{
-                    roll_number: singleRoll.trim(),
-                    student_name: singleName.trim(),
-                    email: singleEmail.trim(),
-                    counselor_name: counselorName.trim()
-                }];
+const BulkManagePage = () => {
+  const [active, setActive] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const opts = window.FILTER_OPTS || {};
 
-                setIsSubmitting(true);
-                try {
-                    const res = await fetch("/bulk-add-students/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({ students })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert(`Successfully added ${students[0].roll_number}.`);
-                        window.location.reload();
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                } catch (e) {
-                    alert("Error adding student.");
-                }
-                setIsSubmitting(false);
-            };
+  const [acBranch,setAcBranch]=useState("");
+  const [acSection,setAcSection]=useState("");
+  const [acYearSem,setAcYearSem]=useState("");
+  const [acAcadYear,setAcAcadYear]=useState("");
+  const [acRangeStart,setAcRangeStart]=useState("");
+  const [acRangeEnd,setAcRangeEnd]=useState("");
+  const [acCounselor,setAcCounselor]=useState("");
+  const [acPreview,setAcPreview]=useState(null);
 
-            // Handle Paste List / Add Students
-            const handleBulkAdd = async () => {
-                if (!bulkStudentsText.trim()) {
-                    alert("Please enter student data.");
-                    return;
-                }
-                
-                const lines = bulkStudentsText.trim().split("\n");
-                const students = [];
-                for (let line of lines) {
-                    const parts = line.split(",").map(p => p.trim());
-                    if (parts.length >= 2 && parts[0]) {
-                        students.push({
-                            roll_number: parts[0],
-                            student_name: parts[1],
-                            email: parts[2] || "",
-                            counselor_name: parts[3] || ""
-                        });
-                    }
-                }
-                
-                if (students.length === 0) {
-                    alert("No valid student data found. Format requires at least Roll Number and Name separated by comma.");
-                    setIsSubmitting(false);
-                    return;
-                }
+  const [arStart,setArStart]=useState("");
+  const [arEnd,setArEnd]=useState("");
+  const [arCounselor,setArCounselor]=useState("");
+  const [arBranch,setArBranch]=useState("");
+  const [arSection,setArSection]=useState("");
+  const [arYearSem,setArYearSem]=useState("");
 
-                setIsSubmitting(true);
-                try {
-                    const res = await fetch("/bulk-add-students/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({ students })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert(`Successfully added ${data.created} students.`);
-                        setBulkStudentsText('');
-                        window.location.reload();
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                } catch (e) {
-                    alert("Error adding students.");
-                }
-                setIsSubmitting(false);
-            };
+  const [srStart,setSrStart]=useState("");
+  const [srEnd,setSrEnd]=useState("");
+  const [srCounselor,setSrCounselor]=useState("");
+  const [srBranch,setSrBranch]=useState("");
+  const [srSection,setSrSection]=useState("");
 
-            // Handle Generate Range
-            const handleBulkAddRange = async () => {
-                if (!rangeStart.trim() || !rangeEnd.trim()) {
-                    alert("Please enter both start and end roll numbers.");
-                    return;
-                }
-                setIsSubmitting(true);
-                try {
-                    const res = await fetch("/bulk-add-students/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({ 
-                            mode: 'range',
-                            start: rangeStart.trim(),
-                            end: rangeEnd.trim(),
-                            counselor_name: counselorName.trim(),
-                            student_year: studentYear.trim(),
-                            branch: branch.trim(),
-                            section: section.trim()
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert(`Successfully created ${data.created} new students in range.`);
-                        window.location.reload();
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                } catch (e) {
-                    alert("Error creating students.");
-                }
-                setIsSubmitting(false);
-            };
+  const [pasteText,setPasteText]=useState("");
 
-            // Select And Apply to Range directly
-            const handleSelectAndApply = async () => {
-                if (!rangeStart.trim() || !rangeEnd.trim()) {
-                    alert("Please enter both start and end roll numbers to apply properties.");
-                    return;
-                }
-                
-                if (!counselorName.trim() && !studentYear.trim() && !branch.trim() && !section.trim()) {
-                    alert("Please specify at least one property (counselor, year, branch, sec) to apply.");
-                    return;
-                }
+  const [ssRoll,setSsRoll]=useState("");
+  const [ssName,setSsName]=useState("");
+  const [ssEmail,setSsEmail]=useState("");
+  const [ssCounselor,setSsCounselor]=useState("");
 
-                const start = rangeStart.trim().toUpperCase();
-                const end = rangeEnd.trim().toUpperCase();
-                
-                // Collect existing student rolls falling in this range
-                const targetRolls = window.ALL_STUDENTS.filter(s => {
-                    const r = s.username.toUpperCase();
-                    return r >= start && r <= end;
-                }).map(s => s.username);
-                
-                if (targetRolls.length === 0) {
-                    alert(`No existing students found between ${start} and ${end}. Generate them first using 'Add Students by Range'`);
-                    return;
-                }
-                
-                setIsSubmitting(true);
-                try {
-                    const res = await fetch("/bulk-assign-counselor/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({
-                            roll_numbers: targetRolls,
-                            counselor_name: counselorName.trim(),
-                            student_year: studentYear.trim(),
-                            branch: branch.trim(),
-                            section: section.trim(),
-                            action: 'assign'
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert(`Successfully updated properties for ${data.updated} students in the selected range.`);
-                        window.location.reload();
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                } catch (e) {
-                    alert("Error applying properties.");
-                }
-                setIsSubmitting(false);
-            };
+  const post = async (url, body) => {
+    const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json","X-CSRFToken":window.CSRF_TOKEN}, body:JSON.stringify(body)});
+    return r.json();
+  };
 
+  const getMatchingStudents = () => {
+    let students = window.ALL_STUDENTS.map(u => {
+      const infoMap = {};
+      window.STUDENTS_WITH_INFO.forEach(s => { infoMap[s.username.toUpperCase()] = s; });
+      const info = infoMap[u.username.toUpperCase()] || {};
+      return {username:u.username, branch:info.branch||"", section:info.section||"", year_sem:info.year_sem||"", academic_year:info.academic_year||"", counselor_name:info.counselor_name||""};
+    });
+    if(acBranch)   students = students.filter(s => !s.branch   || s.branch.toUpperCase()   === acBranch.toUpperCase());
+    if(acSection)  students = students.filter(s => !s.section  || s.section.toUpperCase()  === acSection.toUpperCase());
+    if(acYearSem)  students = students.filter(s => !s.year_sem || s.year_sem === acYearSem);
+    if(acAcadYear) students = students.filter(s => !s.academic_year || s.academic_year === acAcadYear);
+    if(acRangeStart.trim() || acRangeEnd.trim()) {
+      const s = acRangeStart.trim().toUpperCase(), e = acRangeEnd.trim().toUpperCase();
+      students = students.filter(st => { const r=st.username.toUpperCase(); if(s&&e)return r>=s&&r<=e; if(s)return r>=s; if(e)return r<=e; return true; });
+    }
+    return students;
+  };
+
+  const handleAcPreview = () => {
+    if(!acBranch&&!acSection&&!acYearSem&&!acAcadYear&&!acRangeStart&&!acRangeEnd){alert("Select at least one filter.");return;}
+    setAcPreview(getMatchingStudents());
+  };
+
+  const handleAcAssign = async () => {
+    if(!acCounselor.trim()){alert("Enter counselor name.");return;}
+    const matched = getMatchingStudents();
+    if(!matched.length){alert("No students match.");return;}
+    if(!confirm("Assign "+JSON.stringify(acCounselor)+" to "+matched.length+" student(s)?"))return;
+    setBusy(true);
+    const d = await post("/bulk-assign-counselor/",{roll_numbers:matched.map(s=>s.username),counselor_name:acCounselor.trim(),branch:acBranch,section:acSection,year_sem:acYearSem,academic_year:acAcadYear,action:"assign"});
+    setBusy(false);
+    if(d.success){alert("Assigned to "+d.updated+" student(s).");window.location.reload();}else alert("Error: "+d.error);
+  };
+
+  const handleAddRange = async () => {
+    if(!arStart.trim()||!arEnd.trim()){alert("Enter start and end roll numbers.");return;}
+    setBusy(true);
+    const d = await post("/bulk-add-students/",{mode:"range",start:arStart.trim(),end:arEnd.trim(),counselor_name:arCounselor.trim(),branch:arBranch,section:arSection,year_sem:arYearSem});
+    setBusy(false);
+    if(d.success){alert("Created "+d.created+" new students.");window.location.reload();}else alert("Error: "+d.error);
+  };
+
+  const handleSelRange = async () => {
+    if(!srStart.trim()||!srEnd.trim()){alert("Enter start and end roll numbers.");return;}
+    if(!srCounselor.trim()&&!srBranch&&!srSection){alert("Enter at least one property to update.");return;}
+    const s=srStart.trim().toUpperCase(), e=srEnd.trim().toUpperCase();
+    const rolls = window.ALL_STUDENTS.filter(u=>{const r=u.username.toUpperCase();return r>=s&&r<=e;}).map(u=>u.username);
+    if(!rolls.length){alert("No existing students found in that range.");return;}
+    setBusy(true);
+    const d = await post("/bulk-assign-counselor/",{roll_numbers:rolls,counselor_name:srCounselor.trim(),branch:srBranch,section:srSection,action:"assign"});
+    setBusy(false);
+    if(d.success){alert("Updated "+d.updated+" students.");window.location.reload();}else alert("Error: "+d.error);
+  };
+
+  const handlePaste = async () => {
+    if(!pasteText.trim()){alert("Enter student data.");return;}
+    const lines = pasteText.trim().split("\n");
+    const students = [];
+    for(const line of lines){const p=line.split(",").map(x=>x.trim());if(p.length>=1&&p[0])students.push({roll_number:p[0],student_name:p[1]||p[0],email:p[2]||"",counselor_name:p[3]||""});}
+    if(!students.length){alert("No valid data. Format: Roll, Name, Email, Counselor");return;}
+    setBusy(true);
+    const d = await post("/bulk-add-students/",{students});
+    setBusy(false);
+    if(d.success){alert("Added "+d.created+" students.");setPasteText("");window.location.reload();}else alert("Error: "+d.error);
+  };
+
+  const handleSingle = async () => {
+    if(!ssRoll.trim()){alert("Roll number is required.");return;}
+    setBusy(true);
+    const d = await post("/bulk-add-students/",{students:[{roll_number:ssRoll.trim(),student_name:ssName.trim()||ssRoll.trim(),email:ssEmail.trim(),counselor_name:ssCounselor.trim()}]});
+    setBusy(false);
+    if(d.success){alert("Added "+ssRoll+".");setSsRoll("");setSsName("");setSsEmail("");setSsCounselor("");window.location.reload();}else alert("Error: "+d.error);
+  };
+
+  const row = {display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:"14px",marginBottom:"16px"};
+  const card = {background:"#1e293b",border:"1px solid #334155",borderRadius:"12px",padding:"28px",marginTop:"20px"};
+
+  const Panel = () => {
+    if(!active) return null;
+    const ac = CARDS.find(c=>c.id===active);
+
+    if(active==="assign") return (
+      <div style={card}>
+        <h2 style={{color:"#fff",margin:"0 0 6px 0",display:"flex",alignItems:"center",gap:"10px"}}><i className={"bx "+ac.icon} style={{color:ac.color}}></i>{ac.label}</h2>
+        <p style={{color:"#94a3b8",fontSize:"13px",marginBottom:"20px"}}>Filter by branch, section, year-sem, academic year or roll range, then assign a counselor to all matching students.</p>
+        <div style={row}>
+          <div><label style={lbl}>Branch</label><select value={acBranch} onChange={e=>setAcBranch(e.target.value)} style={inp}><option value="">All Branches</option>{BRANCHES.map(b=><option key={b} value={b}>{b}</option>)}</select></div>
+          <div><label style={lbl}>Section</label><select value={acSection} onChange={e=>setAcSection(e.target.value)} style={inp}><option value="">All Sections</option>{SECTIONS.map(s=><option key={s} value={s}>{s}</option>)}</select></div>
+          <div><label style={lbl}>Year - Semester</label><select value={acYearSem} onChange={e=>setAcYearSem(e.target.value)} style={inp}><option value="">All Semesters</option>{YEAR_SEMS.map(y=><option key={y} value={y}>{y}</option>)}</select></div>
+          <div><label style={lbl}>Academic Year</label><select value={acAcadYear} onChange={e=>setAcAcadYear(e.target.value)} style={inp}><option value="">All Years</option>{(opts.acad_years||[]).map(a=><option key={a} value={a}>{a}</option>)}</select></div>
+          <div><label style={lbl}>Roll Range Start</label><input type="text" placeholder="e.g. 22KB1A4201" value={acRangeStart} onChange={e=>setAcRangeStart(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>Roll Range End</label><input type="text" placeholder="e.g. 22KB1A4260" value={acRangeEnd} onChange={e=>setAcRangeEnd(e.target.value)} style={inp}/></div>
+        </div>
+        <div style={{display:"flex",gap:"12px",alignItems:"flex-end",flexWrap:"wrap",marginBottom:"16px"}}>
+          <div style={{flex:1,minWidth:"200px"}}><label style={lbl}>Counselor Name *</label><input type="text" placeholder="Enter counselor name" value={acCounselor} onChange={e=>setAcCounselor(e.target.value)} style={{...inp,border:"1px solid #6366f1"}}/></div>
+          <button onClick={handleAcPreview} style={{padding:"11px 20px",background:"#334155",color:"#94a3b8",border:"none",borderRadius:"8px",cursor:"pointer",fontWeight:"700",fontSize:"13px",display:"flex",alignItems:"center",gap:"6px"}}><i className="bx bx-search-alt"></i>Preview</button>
+          <button onClick={handleAcAssign} disabled={busy} style={{padding:"11px 24px",background:busy?"#334155":"#6366f1",color:"#fff",border:"none",borderRadius:"8px",cursor:busy?"default":"pointer",fontWeight:"700",fontSize:"14px",display:"flex",alignItems:"center",gap:"8px"}}><i className="bx bx-user-check"></i>{busy?"Assigning...":"Assign Counselor"}</button>
+        </div>
+        {acPreview!==null&&(
+          <div style={{background:"#0f172a",borderRadius:"10px",border:"1px solid #334155",overflow:"hidden"}}>
+            <div style={{padding:"12px 16px",borderBottom:"1px solid #334155",display:"flex",justifyContent:"space-between"}}>
+              <span style={{color:"#fff",fontWeight:"700"}}>{acPreview.length>0?<><span style={{color:"#6366f1"}}>{acPreview.length}</span> student(s) match</>:<span style={{color:"#ef4444"}}>No students match</span>}</span>
+              {acPreview.length>0&&acCounselor&&<span style={{fontSize:"12px",color:"#94a3b8"}}>Will assign: <strong style={{color:"#6366f1"}}>{acCounselor}</strong></span>}
+            </div>
+            {acPreview.length>0&&(
+              <div style={{overflowX:"auto",maxHeight:"240px",overflowY:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead><tr style={{background:"#1e293b"}}>{["Roll","Branch","Section","Year-Sem","Current Counselor"].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",color:"#64748b",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",borderBottom:"1px solid #334155"}}>{h}</th>)}</tr></thead>
+                  <tbody>{acPreview.map(s=><tr key={s.username} style={{borderBottom:"1px solid #1e293b"}}><td style={{padding:"10px 14px",color:"#818cf8",fontFamily:"monospace",fontWeight:"700",fontSize:"13px"}}>{s.username}</td><td style={{padding:"10px 14px",color:"#94a3b8",fontSize:"13px"}}>{s.branch||"—"}</td><td style={{padding:"10px 14px",color:"#94a3b8",fontSize:"13px"}}>{s.section||"—"}</td><td style={{padding:"10px 14px",color:"#94a3b8",fontSize:"13px"}}>{s.year_sem||"—"}</td><td style={{padding:"10px 14px",fontSize:"13px",color:s.counselor_name?"#f59e0b":"#475569",fontStyle:s.counselor_name?"normal":"italic"}}>{s.counselor_name||"Unassigned"}</td></tr>)}</tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+
+    if(active==="addrange") return (
+      <div style={card}>
+        <h2 style={{color:"#fff",margin:"0 0 6px 0",display:"flex",alignItems:"center",gap:"10px"}}><i className={"bx "+ac.icon} style={{color:ac.color}}></i>{ac.label}</h2>
+        <p style={{color:"#94a3b8",fontSize:"13px",marginBottom:"20px"}}>Generate new sequential student accounts. Existing ones are skipped.</p>
+        <div style={row}>
+          <div><label style={lbl}>Start Roll *</label><input type="text" placeholder="e.g. 22KB1A4201" value={arStart} onChange={e=>setArStart(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>End Roll *</label><input type="text" placeholder="e.g. 22KB1A4260" value={arEnd} onChange={e=>setArEnd(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>Counselor Name</label><input type="text" placeholder="Optional" value={arCounselor} onChange={e=>setArCounselor(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>Branch</label><select value={arBranch} onChange={e=>setArBranch(e.target.value)} style={inp}><option value="">None</option>{BRANCHES.map(b=><option key={b} value={b}>{b}</option>)}</select></div>
+          <div><label style={lbl}>Section</label><select value={arSection} onChange={e=>setArSection(e.target.value)} style={inp}><option value="">None</option>{SECTIONS.map(s=><option key={s} value={s}>{s}</option>)}</select></div>
+          <div><label style={lbl}>Year - Semester</label><select value={arYearSem} onChange={e=>setArYearSem(e.target.value)} style={inp}><option value="">None</option>{YEAR_SEMS.map(y=><option key={y} value={y}>{y}</option>)}</select></div>
+        </div>
+        <button onClick={handleAddRange} disabled={busy} style={{padding:"11px 24px",background:busy?"#334155":"#059669",color:"#fff",border:"none",borderRadius:"8px",cursor:busy?"default":"pointer",fontWeight:"700",fontSize:"14px",display:"flex",alignItems:"center",gap:"8px"}}><i className="bx bx-layer-plus"></i>{busy?"Creating...":"Generate New Students"}</button>
+      </div>
+    );
+
+    if(active==="selrange") return (
+      <div style={card}>
+        <h2 style={{color:"#fff",margin:"0 0 6px 0",display:"flex",alignItems:"center",gap:"10px"}}><i className={"bx "+ac.icon} style={{color:ac.color}}></i>{ac.label}</h2>
+        <p style={{color:"#94a3b8",fontSize:"13px",marginBottom:"20px"}}>Update properties for existing students within a roll number range.</p>
+        <div style={row}>
+          <div><label style={lbl}>Start Roll *</label><input type="text" placeholder="e.g. 22KB1A4201" value={srStart} onChange={e=>setSrStart(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>End Roll *</label><input type="text" placeholder="e.g. 22KB1A4260" value={srEnd} onChange={e=>setSrEnd(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>Counselor Name</label><input type="text" placeholder="Leave blank to keep" value={srCounselor} onChange={e=>setSrCounselor(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>Branch</label><select value={srBranch} onChange={e=>setSrBranch(e.target.value)} style={inp}><option value="">Keep existing</option>{BRANCHES.map(b=><option key={b} value={b}>{b}</option>)}</select></div>
+          <div><label style={lbl}>Section</label><select value={srSection} onChange={e=>setSrSection(e.target.value)} style={inp}><option value="">Keep existing</option>{SECTIONS.map(s=><option key={s} value={s}>{s}</option>)}</select></div>
+        </div>
+        <button onClick={handleSelRange} disabled={busy} style={{padding:"11px 24px",background:busy?"#334155":"#3b82f6",color:"#fff",border:"none",borderRadius:"8px",cursor:busy?"default":"pointer",fontWeight:"700",fontSize:"14px",display:"flex",alignItems:"center",gap:"8px"}}><i className="bx bx-move-horizontal"></i>{busy?"Updating...":"Apply to Range"}</button>
+      </div>
+    );
+
+    if(active==="paste") return (
+      <div style={card}>
+        <h2 style={{color:"#fff",margin:"0 0 6px 0",display:"flex",alignItems:"center",gap:"10px"}}><i className={"bx "+ac.icon} style={{color:ac.color}}></i>{ac.label}</h2>
+        <p style={{color:"#94a3b8",fontSize:"13px",marginBottom:"16px"}}>One student per line: <strong style={{color:"#fff"}}>Roll, Name, Email (opt), Counselor (opt)</strong></p>
+        <textarea value={pasteText} onChange={e=>setPasteText(e.target.value)} placeholder={"22KB1A4201, John Doe, john@example.com, Dr. Smith\n22KB1A4202, Jane Doe"} style={{width:"100%",height:"200px",background:"#0f172a",color:"#fff",border:"1px solid #334155",borderRadius:"8px",padding:"14px",fontFamily:"monospace",fontSize:"14px",resize:"vertical",marginBottom:"14px"}}></textarea>
+        <button onClick={handlePaste} disabled={busy} style={{padding:"11px 24px",background:busy?"#334155":"#10b981",color:"#fff",border:"none",borderRadius:"8px",cursor:busy?"default":"pointer",fontWeight:"700",fontSize:"14px",display:"flex",alignItems:"center",gap:"8px"}}><i className="bx bx-list-plus"></i>{busy?"Adding...":"Add Students"}</button>
+      </div>
+    );
+
+    if(active==="single") return (
+      <div style={card}>
+        <h2 style={{color:"#fff",margin:"0 0 6px 0",display:"flex",alignItems:"center",gap:"10px"}}><i className={"bx "+ac.icon} style={{color:ac.color}}></i>{ac.label}</h2>
+        <p style={{color:"#94a3b8",fontSize:"13px",marginBottom:"20px"}}>Add one student by entering their details below.</p>
+        <div style={row}>
+          <div><label style={lbl}>Roll Number *</label><input type="text" placeholder="e.g. 22KB1A4201" value={ssRoll} onChange={e=>setSsRoll(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>Full Name</label><input type="text" placeholder="Student full name" value={ssName} onChange={e=>setSsName(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>Email</label><input type="email" placeholder="student@example.com" value={ssEmail} onChange={e=>setSsEmail(e.target.value)} style={inp}/></div>
+          <div><label style={lbl}>Counselor Name</label><input type="text" placeholder="Optional" value={ssCounselor} onChange={e=>setSsCounselor(e.target.value)} style={inp}/></div>
+        </div>
+        <button onClick={handleSingle} disabled={busy} style={{padding:"11px 24px",background:busy?"#334155":"#f59e0b",color:"#fff",border:"none",borderRadius:"8px",cursor:busy?"default":"pointer",fontWeight:"700",fontSize:"14px",display:"flex",alignItems:"center",gap:"8px"}}><i className="bx bx-user-plus"></i>{busy?"Adding...":"Add Student"}</button>
+      </div>
+    );
+    return null;
+  };
+
+  return (
+    <div className="dashboard-layout">
+      <aside className="sidebar">
+        <div className="logo"><i className="bx bx-data" style={{color:"#818cf8",fontSize:"24px"}}></i><span>ADMIN PANEL</span></div>
+        <nav className="nav-links">
+          {NAV.map(item => {
+            if(item.superOnly && !window.IS_SUPERUSER) return null;
             return (
-                <div className="dashboard-layout">
-                    <aside className="sidebar">
-                        <div className="logo">
-                            <i className='bx bx-data' style={{ color: '#818cf8', fontSize: '24px' }}></i>
-                            <span>BULK MGMT</span>
-                        </div>
-
-                        <nav className="nav-links">
-                            <div className="nav-item">
-                                <a href={window.URLS['dashboard']} className="nav-link">
-                                    <i className='bx bxs-dashboard' style={{ color: '#94a3b8' }}></i>
-                                    <span>Home</span>
-                                </a>
-                            </div>
-                            <div className="nav-item">
-                                <a href={window.URLS['counseling']} className="nav-link">
-                                    <i className='bx bx-list-ul' style={{ color: '#94a3b8' }}></i>
-                                    <span>Approvals</span>
-                                </a>
-                            </div>
-                            <div className="nav-item">
-                                <a href={window.URLS['users_admin']} className="nav-link">
-                                    <i className='bx bxs-group' style={{ color: '#94a3b8' }}></i>
-                                    <span>Users Registry</span>
-                                </a>
-                            </div>
-                            <div className="nav-item">
-                                <a href="#" className="nav-link active">
-                                    <i className='bx bx-layer-plus' style={{ color: 'white' }}></i>
-                                    <span>Bulk Operations</span>
-                                </a>
-                            </div>
-
-                            <div className="nav-item logout-item">
-                                <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
-                                    <i className='bx bx-log-out' style={{ color: '#ef4444' }}></i>
-                                    <span>Exit Portal</span>
-                                </a>
-                            </div>
-                        </nav>
-                    </aside>
-
-                    <main className="main-content">
-                        <header className="header">
-                            <div className="welcome-section">
-                                <h1 style={{ color: '#fff' }}>Bulk Operations</h1>
-                                <p>Manage, generate, and assign properties for multiple students at once.</p>
-                            </div>
-
-                            <div className="profile-chip" style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div className="avatar" style={{ background: '#6366f1' }}>{(window.CUR_USER || 'A')[0].toUpperCase()}</div>
-                                <span>{window.CUR_USER || 'Admin'}</span>
-                            </div>
-                        </header>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px', marginTop: '20px' }}>
-                            {/* Card 1: Add by Range */}
-                            <div style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <h2 style={{ margin: '0 0 1rem 0', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                    <i className='bx bx-layer-plus' style={{ color: '#059669' }}></i> Add by Range
-                                </h2>
-                                <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '15px' }}>
-                                    Generate and add NEW sequential student profiles. If they exist, they will be skipped.
-                                </p>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <input type="text" placeholder="Start Roll (e.g. 20KB1A4201)" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    <input type="text" placeholder="End Roll (e.g. 20KB1A4260)" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    
-                                    <hr style={{ border: 'none', borderTop: '1px solid #334155', margin: '5px 0' }} />
-                                    <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>Properties to apply (Optional):</p>
-                                    
-                                    <input type="text" placeholder="Counselor Name" value={counselorName} onChange={e => setCounselorName(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                                        <input type="text" placeholder="Year" value={studentYear} onChange={e => setStudentYear(e.target.value)} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                        <input type="text" placeholder="Branch" value={branch} onChange={e => setBranch(e.target.value)} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                        <input type="text" placeholder="Sec" value={section} onChange={e => setSection(e.target.value)} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    </div>
-                                    
-                                    <button onClick={handleBulkAddRange} disabled={isSubmitting} style={{ width: '100%', background: '#059669', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}>
-                                        {isSubmitting ? 'Working...' : 'Generate New Students'}
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            {/* Card 2: Select by Range (Update) */}
-                            <div style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <h2 style={{ margin: '0 0 1rem 0', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                    <i className='bx bx-move-horizontal' style={{ color: '#3b82f6' }}></i> Select by Range
-                                </h2>
-                                <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '15px' }}>
-                                    Update properties for EXISTING students falling within the entered roll number range.
-                                </p>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <input type="text" placeholder="Start Roll (e.g. 20KB1A4201)" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    <input type="text" placeholder="End Roll (e.g. 20KB1A4260)" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    
-                                    <hr style={{ border: 'none', borderTop: '1px solid #334155', margin: '5px 0' }} />
-                                    <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>Properties to apply (Optional):</p>
-                                    
-                                    <input type="text" placeholder="Counselor Name" value={counselorName} onChange={e => setCounselorName(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                                        <input type="text" placeholder="Year" value={studentYear} onChange={e => setStudentYear(e.target.value)} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                        <input type="text" placeholder="Branch" value={branch} onChange={e => setBranch(e.target.value)} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                        <input type="text" placeholder="Sec" value={section} onChange={e => setSection(e.target.value)} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    </div>
-                                    
-                                    <button onClick={handleSelectAndApply} disabled={isSubmitting} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}>
-                                        {isSubmitting ? 'Working...' : 'Apply to Selected Range'}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Card 3: Paste List */}
-                            <div style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <h2 style={{ margin: '0 0 1rem 0', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                    <i className='bx bx-list-plus' style={{ color: '#10b981' }}></i> Paste List (CSV style)
-                                </h2>
-                                <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '15px' }}>
-                                    Enter one student per line: <strong>Roll, Name, Email (opt), Counselor (opt)</strong>
-                                </p>
-                                
-                                <textarea 
-                                    value={bulkStudentsText}
-                                    onChange={e => setBulkStudentsText(e.target.value)}
-                                    placeholder={`20KB1A4240, John Doe, john@example.com, Dr. Smith\n20KB1A4241, Jane Doe, , Dr. Smith`}
-                                    style={{ width: '100%', height: '220px', background: '#0f172a', color: '#fff', border: '1px solid #334155', borderRadius: '8px', padding: '15px', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical' }}
-                                ></textarea>
-                                
-                                <button onClick={handleBulkAdd} disabled={isSubmitting} style={{ width: '100%', background: '#10b981', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}>
-                                    {isSubmitting ? 'Adding...' : 'Add Pasted Students'}
-                                </button>
-                            </div>
-                            
-                            {/* Card 4: Add Single Student */}
-                            <div style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <h2 style={{ margin: '0 0 1rem 0', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                    <i className='bx bx-user-plus' style={{ color: '#f59e0b' }}></i> Add Single Student
-                                </h2>
-                                <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '15px' }}>
-                                    Quickly add a single student by entering their basic details below.
-                                </p>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <input type="text" placeholder="Roll Number (Required)" value={singleRoll} onChange={e => setSingleRoll(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    <input type="text" placeholder="Full Name" value={singleName} onChange={e => setSingleName(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    <input type="email" placeholder="Email Address" value={singleEmail} onChange={e => setSingleEmail(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    <input type="text" placeholder="Counselor Name (Optional)" value={counselorName} onChange={e => setCounselorName(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px' }}/>
-                                    
-                                    <button onClick={handleAddSingleStudent} disabled={isSubmitting} style={{ width: '100%', background: '#f59e0b', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}>
-                                        {isSubmitting ? 'Working...' : 'Add Student'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                    </main>
-                </div>
+              <div key={item.key} className="nav-item">
+                <a href={window.URLS[item.key]||"#"} className={"nav-link"+(item.active?" active":"")}>
+                  <i className={"bx "+item.icon} style={{color:item.active?"white":"#94a3b8"}}></i>
+                  <span>{item.label}</span>
+                </a>
+              </div>
             );
-        };
+          })}
+          <div className="nav-item logout-item">
+            <a href={window.URLS["logout"]} className="nav-link logout-link-sidebar">
+              <i className="bx bx-log-out" style={{color:"#ef4444"}}></i>
+              <span>Exit Portal</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
+      <main className="main-content">
+        <header className="header">
+          <div className="welcome-section">
+            <h1 style={{color:"#fff"}}>Bulk Operations</h1>
+            <p style={{color:"#94a3b8"}}>Select an operation below to get started.</p>
+          </div>
+          <div className="profile-chip" style={{background:"#1e293b",border:"1px solid rgba(255,255,255,0.1)"}}>
+            <div className="avatar" style={{background:"#6366f1"}}>{(window.CUR_USER||"A")[0].toUpperCase()}</div>
+            <span>{window.CUR_USER||"Admin"}</span>
+          </div>
+        </header>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"14px",marginTop:"10px"}}>
+          {CARDS.map(op => (
+            <button key={op.id} onClick={()=>setActive(active===op.id?null:op.id)}
+              style={{background:active===op.id?op.color:"#1e293b",border:"2px solid "+(active===op.id?op.color:"#334155"),borderRadius:"14px",padding:"24px 20px",cursor:"pointer",textAlign:"left",transition:"all 0.2s",color:"#fff"}}>
+              <i className={"bx "+op.icon} style={{fontSize:"28px",color:active===op.id?"#fff":op.color,display:"block",marginBottom:"12px"}}></i>
+              <div style={{fontWeight:"700",fontSize:"15px",marginBottom:"6px"}}>{op.label}</div>
+              <div style={{fontSize:"12px",color:active===op.id?"rgba(255,255,255,0.8)":"#64748b",lineHeight:"1.4"}}>{op.desc}</div>
+            </button>
+          ))}
+        </div>
+        <Panel/>
+      </main>
+    </div>
+  );
+};
 
-        window.addEventListener('load', () => {
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(<BulkManagePage />);
-        });
-    </script>
-    {% endverbatim %}
+window.addEventListener("load", () => {
+  ReactDOM.createRoot(document.getElementById("root")).render(<BulkManagePage/>);
+});
+</script>
+{% endverbatim %}
 </body>
 </html>

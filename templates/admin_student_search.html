@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<div style="display:none;">{% load static %}</div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Search | Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body style="background:#0f172a;color:#f8fafc;font-family:'Outfit',sans-serif;">
+<div id="root"></div>
+
+<script>
+    window.CUR_USER     = "{{ user.username|default:'Admin' }}";
+    window.IS_SUPERUSER = "{{ is_superuser }}" === "True";
+    window.ROLL_QUERY   = "{{ roll_query|escapejs }}";
+    window.RESULT       = {{ result_json|safe }};
+    window.URLS = {
+        'dashboard':      "{% url 'admin_dashboard' %}",
+        'approvals':      "{% url 'admin_approvals' %}",
+        'student_search': "{% url 'student_search' %}",
+        'users':          "{% url 'admin_users' %}",
+        'bulk_ops':       "{% url 'admin_bulk_manage' %}",
+        'export':         "{% url 'admin_export' %}",
+        'django_admin':   "/admin/",
+        'logout':         "{% url 'logout' %}"
+    };
+</script>
+
+{% verbatim %}
+<script type="text/babel">
+    const { useState, useRef } = React;
+
+    const NAV = [
+        { key:'dashboard',      label:'Home',           icon:'bxs-dashboard', active:false },
+        { key:'approvals',      label:'Approvals',      icon:'bx-list-check', active:false },
+        { key:'student_search', label:'Student Search', icon:'bx-search-alt-2', active:true },
+        { key:'users',          label:'Users',          icon:'bx-group',      active:false },
+        { key:'bulk_ops',       label:'Bulk Operations',icon:'bx-layer-plus', active:false },
+        { key:'export',         label:'Export CSV',     icon:'bx-export',     active:false },
+        { key:'django_admin',   label:'Admin Panel',    icon:'bxs-cog',       active:false, superOnly:true },
+    ];
+
+    const Badge = ({ status }) => {
+        const map = {
+            'Pending':     { bg:'#78350f', text:'#fef3c7', dot:'#f59e0b' },
+            'Approved':    { bg:'#14532d', text:'#dcfce7', dot:'#22c55e' },
+            'Rejected':    { bg:'#7f1d1d', text:'#fee2e2', dot:'#ef4444' },
+            'Resolved':    { bg:'#064e3b', text:'#d1fae5', dot:'#10b981' },
+            'In Progress': { bg:'#1e3a8a', text:'#dbeafe', dot:'#60a5fa' },
+        };
+        const c = map[status] || map['Pending'];
+        return (
+            <span style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'4px 12px',borderRadius:'20px',fontSize:'11px',fontWeight:'700',background:c.bg,color:c.text,textTransform:'uppercase',letterSpacing:'0.5px'}}>
+                <span style={{width:'6px',height:'6px',borderRadius:'50%',background:c.dot,flexShrink:0}}></span>
+                {status}
+            </span>
+        );
+    };
+
+    const WorkflowStep = ({ role, status }) => {
+        const colors = { 'Approved':'#22c55e', 'Rejected':'#ef4444', 'Pending':'#f59e0b' };
+        const icons  = { 'Approved':'bx-check-circle', 'Rejected':'bx-x-circle', 'Pending':'bx-time-five' };
+        const color  = colors[status] || colors['Pending'];
+        return (
+            <div style={{textAlign:'center',flex:1}}>
+                <i className={`bx ${icons[status]||icons['Pending']}`} style={{fontSize:'28px',color,display:'block',marginBottom:'6px'}}></i>
+                <div style={{fontSize:'11px',color:'#64748b',fontWeight:'700',textTransform:'uppercase',marginBottom:'4px'}}>{role}</div>
+                <Badge status={status||'Pending'} />
+            </div>
+        );
+    };
+
+    const StudentSearch = () => {
+        const [query, setQuery] = useState(window.ROLL_QUERY || '');
+        const inputRef = useRef(null);
+
+        const handleSearch = () => {
+            const q = query.trim();
+            if (!q) return;
+            window.location.href = `${window.URLS['student_search']}?roll=${encodeURIComponent(q)}`;
+        };
+
+        const r = window.RESULT;
+
+        return (
+            <div className="dashboard-layout">
+                {/* Sidebar */}
+                <aside className="sidebar">
+                    <div className="logo">
+                        <i className='bx bxs-shield-quarter' style={{color:'#818cf8',fontSize:'24px'}}></i>
+                        <span>ADMIN PANEL</span>
+                    </div>
+                    <nav className="nav-links">
+                        {NAV.map(item => {
+                            if (item.superOnly && !window.IS_SUPERUSER) return null;
+                            return (
+                                <div key={item.key} className="nav-item">
+                                    <a href={window.URLS[item.key]||'#'} className={`nav-link${item.active?' active':''}`}>
+                                        <i className={`bx ${item.icon}`} style={{color:item.active?'white':'#94a3b8'}}></i>
+                                        <span>{item.label}</span>
+                                    </a>
+                                </div>
+                            );
+                        })}
+                        <div className="nav-item logout-item">
+                            <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
+                                <i className='bx bx-log-out' style={{color:'#ef4444'}}></i>
+                                <span>Exit Portal</span>
+                            </a>
+                        </div>
+                    </nav>
+                </aside>
+
+                {/* Main */}
+                <main className="main-content">
+                    <header className="header">
+                        <div className="welcome-section">
+                            <h1 style={{color:'#fff'}}>Student Search</h1>
+                            <p>Look up any student by roll number to see their counseling and grievance status.</p>
+                        </div>
+                        <div className="profile-chip" style={{background:'#1e293b',border:'1px solid rgba(255,255,255,0.1)'}}>
+                            <div className="avatar" style={{background:'#6366f1'}}>{(window.CUR_USER||'A')[0].toUpperCase()}</div>
+                            <span>{window.CUR_USER||'Admin'}</span>
+                        </div>
+                    </header>
+
+                    {/* Search bar */}
+                    <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:'16px',padding:'28px',marginBottom:'28px'}}>
+                        <div style={{display:'flex',gap:'12px',alignItems:'flex-end',flexWrap:'wrap'}}>
+                            <div style={{flex:1,minWidth:'240px'}}>
+                                <label style={{display:'block',marginBottom:'8px',fontSize:'11px',color:'#64748b',fontWeight:'700',textTransform:'uppercase',letterSpacing:'0.8px'}}>
+                                    Roll Number
+                                </label>
+                                <div style={{position:'relative'}}>
+                                    <i className='bx bx-id-card' style={{position:'absolute',left:'12px',top:'50%',transform:'translateY(-50%)',color:'#64748b',fontSize:'18px'}}></i>
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        placeholder="Enter roll number e.g. 22KB1A4201"
+                                        value={query}
+                                        onChange={e => setQuery(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                                        autoFocus
+                                        style={{width:'100%',padding:'12px 14px 12px 40px',background:'#0f172a',border:'1px solid #334155',borderRadius:'10px',color:'#fff',fontSize:'15px',outline:'none',fontFamily:'monospace'}}
+                                    />
+                                </div>
+                            </div>
+                            <button onClick={handleSearch}
+                                style={{padding:'12px 28px',background:'#6366f1',color:'#fff',border:'none',borderRadius:'10px',cursor:'pointer',fontWeight:'700',fontSize:'15px',display:'flex',alignItems:'center',gap:'8px',whiteSpace:'nowrap'}}>
+                                <i className='bx bx-search'></i> Search
+                            </button>
+                            {r && (
+                                <button onClick={() => { setQuery(''); window.location.href = window.URLS['student_search']; }}
+                                    style={{padding:'12px 18px',background:'#334155',color:'#94a3b8',border:'none',borderRadius:'10px',cursor:'pointer',fontWeight:'600',fontSize:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+                                    <i className='bx bx-x'></i> Clear
+                                </button>
+                            )}
+                            {/* Add Student button */}
+                            <a href={window.URLS['bulk_ops']}
+                                style={{padding:'12px 20px',background:'#059669',color:'#fff',borderRadius:'10px',textDecoration:'none',fontWeight:'700',fontSize:'14px',display:'flex',alignItems:'center',gap:'8px',whiteSpace:'nowrap',marginLeft:'auto'}}>
+                                <i className='bx bx-user-plus' style={{fontSize:'18px'}}></i> Add Student
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* No search yet */}
+                    {!r && (
+                        <div style={{textAlign:'center',padding:'80px 20px',color:'#334155'}}>
+                            <i className='bx bx-search-alt' style={{fontSize:'64px',display:'block',marginBottom:'16px',color:'#1e293b'}}></i>
+                            <p style={{color:'#475569',fontSize:'16px',margin:0}}>Enter a roll number above to look up a student</p>
+                        </div>
+                    )}
+
+                    {/* Not found */}
+                    {r && !r.found && (
+                        <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:'16px',padding:'40px',textAlign:'center'}}>
+                            <i className='bx bx-user-x' style={{fontSize:'56px',color:'#ef4444',display:'block',marginBottom:'12px'}}></i>
+                            <h2 style={{color:'#fff',margin:'0 0 8px 0'}}>No counseling record found</h2>
+                            <p style={{color:'#64748b',margin:'0 0 16px 0'}}>
+                                Roll number <strong style={{color:'#818cf8',fontFamily:'monospace'}}>{r.roll}</strong> has {r.user_exists ? 'a registered account but no submitted counseling form.' : 'no registered account in the system.'}
+                            </p>
+                            {r.grievances && r.grievances.length > 0 && (
+                                <p style={{color:'#f59e0b',fontSize:'13px'}}>⚠ {r.grievances.length} grievance(s) found for this roll number — see below.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Found */}
+                    {r && r.found && (
+                        <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+
+                            {/* Student info card */}
+                            <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:'16px',overflow:'hidden'}}>
+                                <div style={{background:'linear-gradient(135deg,#4f46e5,#7c3aed)',padding:'20px 24px',display:'flex',alignItems:'center',gap:'16px'}}>
+                                    <div style={{width:'52px',height:'52px',borderRadius:'50%',background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'22px',fontWeight:'800',color:'#fff',flexShrink:0}}>
+                                        {(r.name||r.roll)[0].toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div style={{color:'#fff',fontWeight:'800',fontSize:'18px'}}>{r.name || r.roll}</div>
+                                        <div style={{color:'rgba(255,255,255,0.7)',fontSize:'13px',fontFamily:'monospace'}}>{r.roll}</div>
+                                    </div>
+                                    <div style={{marginLeft:'auto',display:'flex',gap:'8px',flexWrap:'wrap'}}>
+                                        <Badge status={r.approval_status} />
+                                        <a href={`/view-form/counseling/${r.counseling_id}/`}
+                                           style={{padding:'6px 14px',background:'rgba(255,255,255,0.15)',color:'#fff',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:'700',display:'flex',alignItems:'center',gap:'6px'}}>
+                                            <i className='bx bx-show'></i> View Full Form
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:'0',borderTop:'1px solid #334155'}}>
+                                    {[
+                                        {label:'Email',       val:r.email,         icon:'bx-envelope'},
+                                        {label:'Counselor',   val:r.counselor,     icon:'bx-user-check'},
+                                        {label:'Branch',      val:r.branch,        icon:'bx-buildings'},
+                                        {label:'Section',     val:r.section,       icon:'bx-category'},
+                                        {label:'Year-Sem',    val:r.year_sem,      icon:'bx-book-open'},
+                                        {label:'Acad. Year',  val:r.academic_year, icon:'bx-calendar'},
+                                        {label:'Submitted',   val:r.submitted,     icon:'bx-time'},
+                                    ].map(item => (
+                                        <div key={item.label} style={{padding:'16px 20px',borderRight:'1px solid #0f172a',borderBottom:'1px solid #0f172a'}}>
+                                            <div style={{fontSize:'11px',color:'#64748b',fontWeight:'700',textTransform:'uppercase',marginBottom:'6px',display:'flex',alignItems:'center',gap:'5px'}}>
+                                                <i className={`bx ${item.icon}`}></i>{item.label}
+                                            </div>
+                                            <div style={{color: item.val ? '#fff' : '#475569',fontWeight:'600',fontSize:'14px'}}>
+                                                {item.val || '—'}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Approval workflow */}
+                            <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:'16px',overflow:'hidden'}}>
+                                <div style={{padding:'16px 24px',borderBottom:'1px solid #334155',display:'flex',alignItems:'center',gap:'8px'}}>
+                                    <i className='bx bx-check-shield' style={{color:'#6366f1',fontSize:'20px'}}></i>
+                                    <h3 style={{margin:0,color:'#fff',fontSize:'15px',fontWeight:'700'}}>Counseling Approval Workflow</h3>
+                                </div>
+                                <div style={{padding:'24px',display:'flex',gap:'12px',alignItems:'flex-start',flexWrap:'wrap'}}>
+                                    {[
+                                        {role:'Counselor', status:r.counselor_approval},
+                                        {role:'HOD',       status:r.hod_approval},
+                                        {role:'Incharge',  status:r.incharge_approval},
+                                        {role:'Director',  status:r.director_approval},
+                                    ].map((step, i) => (
+                                        <React.Fragment key={step.role}>
+                                            <WorkflowStep role={step.role} status={step.status} />
+                                            {i < 3 && (
+                                                <div style={{alignSelf:'center',color:'#334155',fontSize:'20px',marginTop:'-20px'}}>→</div>
+                                            )}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Grievances */}
+                            <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:'16px',overflow:'hidden'}}>
+                                <div style={{padding:'16px 24px',borderBottom:'1px solid #334155',display:'flex',alignItems:'center',gap:'8px'}}>
+                                    <i className='bx bx-error-alt' style={{color:'#f43f5e',fontSize:'20px'}}></i>
+                                    <h3 style={{margin:0,color:'#fff',fontSize:'15px',fontWeight:'700'}}>
+                                        Grievances
+                                        <span style={{marginLeft:'8px',background:'#334155',borderRadius:'10px',padding:'2px 8px',fontSize:'12px',color:'#94a3b8'}}>{r.grievances.length}</span>
+                                    </h3>
+                                </div>
+                                {r.grievances.length === 0 ? (
+                                    <div style={{padding:'40px',textAlign:'center',color:'#475569'}}>
+                                        <i className='bx bx-check-circle' style={{fontSize:'36px',color:'#22c55e',display:'block',marginBottom:'8px'}}></i>
+                                        No grievances filed by this student.
+                                    </div>
+                                ) : (
+                                    <div style={{overflowX:'auto'}}>
+                                        <table style={{width:'100%',borderCollapse:'collapse'}}>
+                                            <thead>
+                                                <tr style={{background:'#0f172a'}}>
+                                                    {['Type','Incident Date','Submitted','Status','Action'].map(h => (
+                                                        <th key={h} style={{padding:'12px 16px',textAlign: h==='Action'?'center':'left',color:'#64748b',fontSize:'11px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'0.8px',borderBottom:'2px solid #334155',whiteSpace:'nowrap'}}>{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {r.grievances.map(g => (
+                                                    <tr key={g.id} style={{borderBottom:'1px solid #0f172a'}}
+                                                        onMouseEnter={e=>e.currentTarget.style.background='rgba(244,63,94,0.05)'}
+                                                        onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                                                        <td style={{padding:'13px 16px',color:'#fff',fontWeight:'600'}}>{g.grievance_type}</td>
+                                                        <td style={{padding:'13px 16px',color:'#94a3b8',fontSize:'13px'}}>{g.incident_date||'—'}</td>
+                                                        <td style={{padding:'13px 16px',color:'#94a3b8',fontSize:'13px'}}>{g.submission_date||'—'}</td>
+                                                        <td style={{padding:'13px 16px'}}><Badge status={g.status} /></td>
+                                                        <td style={{padding:'13px 16px',textAlign:'center'}}>
+                                                            <a href={`/view-form/grievance/${g.id}/`}
+                                                               style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'6px 14px',background:'#f43f5e',color:'#fff',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:'700'}}
+                                                               onMouseEnter={e=>e.currentTarget.style.background='#e11d48'}
+                                                               onMouseLeave={e=>e.currentTarget.style.background='#f43f5e'}>
+                                                                <i className='bx bx-show'></i> View
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Grievances when counseling not found but grievances exist */}
+                    {r && !r.found && r.grievances && r.grievances.length > 0 && (
+                        <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:'16px',overflow:'hidden',marginTop:'20px'}}>
+                            <div style={{padding:'16px 24px',borderBottom:'1px solid #334155',display:'flex',alignItems:'center',gap:'8px'}}>
+                                <i className='bx bx-error-alt' style={{color:'#f43f5e',fontSize:'20px'}}></i>
+                                <h3 style={{margin:0,color:'#fff',fontSize:'15px',fontWeight:'700'}}>Grievances ({r.grievances.length})</h3>
+                            </div>
+                            <div style={{overflowX:'auto'}}>
+                                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                                    <thead>
+                                        <tr style={{background:'#0f172a'}}>
+                                            {['Type','Incident Date','Submitted','Status','Action'].map(h => (
+                                                <th key={h} style={{padding:'12px 16px',textAlign:h==='Action'?'center':'left',color:'#64748b',fontSize:'11px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'0.8px',borderBottom:'2px solid #334155'}}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {r.grievances.map(g => (
+                                            <tr key={g.id} style={{borderBottom:'1px solid #0f172a'}}>
+                                                <td style={{padding:'13px 16px',color:'#fff',fontWeight:'600'}}>{g.grievance_type}</td>
+                                                <td style={{padding:'13px 16px',color:'#94a3b8',fontSize:'13px'}}>{g.incident_date||'—'}</td>
+                                                <td style={{padding:'13px 16px',color:'#94a3b8',fontSize:'13px'}}>{g.submission_date||'—'}</td>
+                                                <td style={{padding:'13px 16px'}}><Badge status={g.status} /></td>
+                                                <td style={{padding:'13px 16px',textAlign:'center'}}>
+                                                    <a href={`/view-form/grievance/${g.id}/`}
+                                                       style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'6px 14px',background:'#f43f5e',color:'#fff',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:'700'}}>
+                                                        <i className='bx bx-show'></i> View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </main>
+            </div>
+        );
+    };
+
+    window.addEventListener('load', () => {
+        ReactDOM.createRoot(document.getElementById('root')).render(<StudentSearch />);
+    });
+</script>
+{% endverbatim %}
+</body>
+</html>

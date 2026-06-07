@@ -114,10 +114,15 @@
         }
 
         window.URLS = {
-            'counseling': "/admin/counseling/studentcounseling/" + counselFilter,
-            'grievance': "/admin/counseling/grievance/" + grievanceFilter,
-            'users': window.IS_SUPERUSER ? "{% url 'admin_users' %}" : "/admin/auth/user/",
-            'logout': "{% url 'logout' %}"
+            'counseling':     "/admin/counseling/studentcounseling/",
+            'grievance':      "/admin/counseling/grievance/",
+            'approvals':      "{% url 'admin_approvals' %}",
+            'student_search': "{% url 'student_search' %}",
+            'users':          "{% url 'admin_users' %}",
+            'bulk_ops':       "{% url 'admin_bulk_manage' %}",
+            'export':         "{% url 'admin_export' %}",
+            'django_admin':   "/admin/",
+            'logout':         "{% url 'logout' %}"
         };
 
         window.MESSAGES = JSON.parse('[{% for m in messages %}{"text":"{{ m|escapejs }}","tags":"{{ m.tags }}"}{% if not forloop.last %},{% endif %}{% endfor %}]');
@@ -135,6 +140,16 @@
                 { id: 'users', label: 'User Directory', icon: 'group', color: 'bg-blue' },
             ];
 
+            const NAV = [
+                { key: 'dashboard',      label: 'Home',            icon: 'bxs-dashboard',   active: true  },
+                { key: 'approvals',      label: 'Approvals',       icon: 'bx-list-check',   active: false },
+                { key: 'student_search', label: 'Student Search',  icon: 'bx-search-alt-2', active: false },
+                { key: 'users',          label: 'Users',           icon: 'bx-group',      active: false },
+                { key: 'bulk_ops',       label: 'Bulk Operations', icon: 'bx-layer-plus', active: false },
+                { key: 'export',         label: 'Export CSV',      icon: 'bx-export',     active: false },
+                { key: 'django_admin',   label: 'Admin Panel',     icon: 'bxs-cog',       active: false, superOnly: true },
+            ];
+
             return (
                 <div className="dashboard-layout">
                     <aside className="sidebar">
@@ -144,30 +159,22 @@
                         </div>
 
                         <nav className="nav-links">
-                            <div className="nav-item">
-                                <a href="#" className="nav-link active">
-                                    <i className='bx bxs-dashboard' style={{ color: 'white' }}></i>
-                                    <span>Home</span>
+                            {NAV.map(item => {
+                                if (item.superOnly && !window.IS_SUPERUSER) return null;
+                                return (
+                                    <div key={item.key} className="nav-item">
+                                        <a href={window.URLS[item.key] || '#'} className={`nav-link${item.active ? ' active' : ''}`}>
+                                            <i className={`bx ${item.icon}`} style={{ color: item.active ? 'white' : '#94a3b8' }}></i>
+                                            <span>{item.label}</span>
+                                        </a>
+                                    </div>
+                                );
+                            })}
+                            <div className="nav-item logout-item">
+                                <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
+                                    <i className='bx bx-log-out' style={{ color: '#ef4444' }}></i>
+                                    <span>Exit Portal</span>
                                 </a>
-                            </div>
-                            <div className="nav-item">
-                                <a href={window.URLS['counseling']} className="nav-link">
-                                    <i className='bx bx-list-ul' style={{ color: '#94a3b8' }}></i>
-                                    <span>Approvals</span>
-                                </a>
-                            </div>
-                            <div className="nav-item">
-                                <a href={window.URLS['users']} className="nav-link">
-                                    <i className='bx bx-group' style={{ color: '#94a3b8' }}></i>
-                                    <span>Users</span>
-                                </a>
-                            </div>
-
-                             <div className="nav-item logout-item">
-                                 <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
-                                     <i className='bx bx-log-out' style={{ color: '#ef4444' }}></i>
-                                     <span>Exit Portal</span>
-                                 </a>
                             </div>
                         </nav>
                     </aside>

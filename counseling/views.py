@@ -7,9 +7,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.models import User
 import json
+import csv
 from datetime import timedelta
-from django.http import JsonResponse
 
 @login_required
 def dashboard_view(request):
@@ -36,6 +38,272 @@ def dashboard_view(request):
         'grievance_status': grievance_status,
     }
     return render(request, 'dashboard.html', context)
+
+@login_required
+def inline_approve(request):
+    """AJAX endpoint — approve or reject a counseling/grievance record inline from the approvals list."""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'})
+
+    try:
+        data       = json.loads(request.body)
+        record_type = data.get('type')       # 'counseling' or 'grievance'
+        record_id   = int(data.get('id'))
+        action      = data.get('action')     # 'Approved' or 'Rejected'
+        target_role = data.get('target_role', '').upper()
+
+        if action not in ('Approved', 'Rejected'):
+            return JsonResponse({'success': False, 'error': 'Invalid action'})
+
+        user_role = request.user.username.upper()
+        # Superusers can act as any role; others act as themselves
+        role_to_act = target_role if (request.user.is_superuser and target_role) else user_role
+
+        if record_type == 'counseling':
+            obj = get_object_or_404(StudentCounseling, pk=record_id)
+            if role_to_act == 'COUNSELOR':
+                obj.counselor_approval = action
+            elif role_to_act == 'HOD':
+                obj.hod_approval = action
+            elif role_to_act == 'INCHARGE':
+                obj.incharge_approval = action
+            elif role_to_act == 'DIRECTOR':
+                obj.director_approval = action
+            elif request.user.is_superuser:
+                # Superuser with no specific role — approve/reject all stages at once
+                obj.counselor_approval = action
+                obj.hod_approval = action
+                obj.incharge_approval = action
+                obj.director_approval = action
+            else:
+                return JsonResponse({'success': False, 'error': f'Unknown role: {role_to_act}'})
+
+            approvals = [obj.counselor_approval, obj.hod_approval,
+                         obj.incharge_approval, obj.director_approval]
+            if 'Rejected' in approvals:
+                obj.approval_status = 'Rejected'
+            elif all(a == 'Approved' for a in approvals):
+                obj.approval_status = 'Approved'
+            else:
+                obj.approval_status = 'Pending'
+            obj.save()
+
+            return JsonResponse({
+                'success': True,
+                'approval_status':    obj.approval_status,
+                'counselor_approval': obj.counselor_approval,
+                'hod_approval':       obj.hod_approval,
+                'incharge_approval':  obj.incharge_approval,
+                'director_approval':  obj.director_approval,
+            })
+
+        elif record_type == 'grievance':
+            obj = get_object_or_404(Grievance, pk=record_id)
+            if role_to_act == 'COUNSELOR':
+                obj.counselor_approval = action
+            elif role_to_act == 'HOD':
+                obj.hod_approval = action
+            elif role_to_act == 'INCHARGE':
+                obj.incharge_approval = action
+            elif role_to_act == 'DIRECTOR':
+                obj.director_approval = action
+            elif request.user.is_superuser:
+                obj.counselor_approval = action
+                obj.hod_approval = action
+                obj.incharge_approval = action
+                obj.director_approval = action
+            else:
+                return JsonResponse({'success': False, 'error': f'Unknown role: {role_to_act}'})
+
+            approvals = [obj.counselor_approval, obj.hod_approval,
+                         obj.incharge_approval, obj.director_approval]
+            if 'Rejected' in approvals:
+                obj.status = 'Rejected'
+            elif all(a == 'Approved' for a in approvals):
+                obj.status = 'Resolved'
+            else:
+                obj.status = 'Pending'
+            obj.save()
+
+            return JsonResponse({
+                'success': True,
+                'status':             obj.status,
+                'counselor_approval': obj.counselor_approval,
+                'hod_approval':       obj.hod_approval,
+                'incharge_approval':  obj.incharge_approval,
+                'director_approval':  obj.director_approval,
+            })
+
+        return JsonResponse({'success': False, 'error': 'Unknown type'})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def admin_approvals_view(request):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+
+    user_upper = request.user.username.upper()
+
+    # Determine if this user is a named counselor (not a role-based account)
+    # Role accounts: COUNSELOR, HOD, INCHARGE, DIRECTOR
+    # Named counselors: NATRAJ, natraj@007, etc. — is_staff but not a role keyword
+    ROLE_KEYWORDS = {'COUNSELOR', 'HOD', 'INCHARGE', 'DIRECTOR'}
+    is_named_counselor = (
+        request.user.is_staff and
+        not request.user.is_superuser and
+        not any(kw in user_upper for kw in ROLE_KEYWORDS)
+    )
+
+    # Base queryset
+    counseling_qs = StudentCounseling.objects.filter(
+        roll_number__isnull=False
+    ).exclude(roll_number='')
+
+    grievance_qs = Grievance.objects.all()
+
+    # Named counselors only see their own students
+    if is_named_counselor:
+        # Match counselor_name case-insensitively against the username
+        counseling_qs = counseling_qs.filter(
+            counselor_name__iexact=request.user.username
+        )
+        # For grievances, filter by rolls that belong to this counselor
+        counselor_rolls = list(counseling_qs.values_list('roll_number', flat=True))
+        grievance_qs = grievance_qs.filter(roll_number__in=counselor_rolls)
+
+    counseling_qs = counseling_qs.order_by('-last_submission_date', 'roll_number')
+    grievance_qs  = grievance_qs.order_by('-submission_date')
+
+    # Build filter options for select-by-range modal (superadmin only)
+    branches   = sorted(set(v for v in StudentCounseling.objects.values_list('branch', flat=True) if v and v.strip()))
+    sections   = sorted(set(v for v in StudentCounseling.objects.values_list('section', flat=True) if v and v.strip()))
+    year_sems  = sorted(set(v for v in StudentCounseling.objects.values_list('year_sem', flat=True) if v and v.strip()))
+    acad_years = sorted(set(v for v in StudentCounseling.objects.values_list('academic_year', flat=True) if v and v.strip()))
+
+    # Build counselor lookup: branch+section+year_sem → counselor_name
+    counselor_map = {}
+    for sc in StudentCounseling.objects.exclude(counselor_name='').exclude(counselor_name__isnull=True):
+        key = f"{sc.branch or ''}|{sc.section or ''}|{sc.year_sem or ''}"
+        if key not in counselor_map and sc.counselor_name:
+            counselor_map[key] = sc.counselor_name
+
+    counseling_json = json.dumps([
+        {
+            'id': s.id,
+            'roll_number': s.roll_number or '',
+            'student_name': s.student_name or '',
+            'counselor_name': s.counselor_name or '',
+            'year_sem': s.year_sem or '',
+            'branch': s.branch or '',
+            'section': s.section or '',
+            'approval_status': s.approval_status,
+            'counselor_approval': s.counselor_approval,
+            'hod_approval': s.hod_approval,
+            'incharge_approval': s.incharge_approval,
+            'director_approval': s.director_approval,
+            'last_submission_date': s.last_submission_date.isoformat() if s.last_submission_date else None,
+            'submitted': bool(s.last_submission_date),
+        }
+        for s in counseling_qs
+    ])
+
+    grievance_json = json.dumps([
+        {
+            'id': g.id,
+            'roll_number': g.roll_number or '',
+            'grievance_type': g.get_grievance_type_display(),
+            'incident_date': str(g.incident_date) if g.incident_date else None,
+            'status': g.status,
+            'counselor_approval': g.counselor_approval,
+            'hod_approval': g.hod_approval,
+            'incharge_approval': g.incharge_approval,
+            'director_approval': g.director_approval,
+            'submission_date': g.submission_date.isoformat() if g.submission_date else None,
+        }
+        for g in grievance_qs
+    ])
+
+    context = {
+        'counseling_json': counseling_json,
+        'grievance_json': grievance_json,
+        'user_role': user_upper,
+        'is_superuser': request.user.is_superuser,
+        'is_named_counselor': is_named_counselor,
+        'filter_opts': json.dumps({
+            'branches': branches,
+            'sections': sections,
+            'year_sems': year_sems,
+            'acad_years': acad_years,
+            'counselor_map': counselor_map,
+        }),
+    }
+    return render(request, 'admin_approvals.html', context)
+
+
+@login_required
+def student_search_view(request):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+
+    roll = request.GET.get('roll', '').strip()
+    result = None
+
+    if roll:
+        counseling = StudentCounseling.objects.filter(roll_number__iexact=roll).order_by('-last_submission_date').first()
+        grievances = list(Grievance.objects.filter(roll_number__iexact=roll).order_by('-submission_date').values(
+            'id', 'grievance_type', 'status', 'counselor_approval', 'hod_approval',
+            'incharge_approval', 'director_approval', 'submission_date', 'incident_date'
+        ))
+        for g in grievances:
+            if g['submission_date']:
+                g['submission_date'] = g['submission_date'].strftime('%d %b %Y')
+            if g['incident_date']:
+                g['incident_date'] = str(g['incident_date'])
+
+        if counseling:
+            result = {
+                'found': True,
+                'roll': counseling.roll_number,
+                'name': counseling.student_name or '',
+                'email': counseling.email or '',
+                'counselor': counseling.counselor_name or '',
+                'branch': counseling.branch or '',
+                'section': counseling.section or '',
+                'year_sem': counseling.year_sem or '',
+                'academic_year': counseling.academic_year or '',
+                'submitted': counseling.last_submission_date.strftime('%d %b %Y') if counseling.last_submission_date else None,
+                'approval_status': counseling.approval_status,
+                'counselor_approval': counseling.counselor_approval,
+                'hod_approval': counseling.hod_approval,
+                'incharge_approval': counseling.incharge_approval,
+                'director_approval': counseling.director_approval,
+                'counseling_id': counseling.id,
+                'grievances': grievances,
+            }
+        else:
+            # Check if user exists at all
+            from django.contrib.auth.models import User as AuthUser
+            user_exists = AuthUser.objects.filter(username__iexact=roll).exists()
+            result = {
+                'found': False,
+                'roll': roll,
+                'user_exists': user_exists,
+                'grievances': grievances,
+            }
+
+    context = {
+        'roll_query': roll,
+        'result_json': json.dumps(result) if result else 'null',
+        'is_superuser': request.user.is_superuser,
+    }
+    return render(request, 'admin_student_search.html', context)
+
 
 @login_required
 def admin_dashboard_view(request):
@@ -100,7 +368,7 @@ def admin_dashboard_view(request):
 
 @login_required
 def admin_users_view(request):
-    if not request.user.is_superuser:
+    if not request.user.is_staff:
         return redirect('dashboard')
     
     from django.contrib.auth.models import User
@@ -248,10 +516,6 @@ def admin_bulk_manage_view(request):
     if not request.user.is_staff:
         return redirect('dashboard')
     
-    from django.contrib.auth.models import User
-    from .models import StudentCounseling
-    import json
-    
     all_qs = StudentCounseling.objects.all().order_by('roll_number', '-last_submission_date')
     latest_ids = []
     seen = set()
@@ -263,17 +527,38 @@ def admin_bulk_manage_view(request):
     sc_qs = StudentCounseling.objects.filter(id__in=latest_ids)
     
     users_qs = User.objects.filter(is_superuser=False, is_staff=False)
-    filtered_student_rolls_upper = {roll.upper() for roll in sc_qs.values_list('roll_number', flat=True) if roll}
-    
     users_list = users_qs.values('id', 'username', 'email')
-    processed_users = []
-    
-    for u in users_list:
-        processed_users.append(u)
+    processed_users = list(users_list)
+
+    # Build filter options for assign counselor card
+    branches   = sorted(set(v for v in sc_qs.values_list('branch', flat=True) if v and v.strip()))
+    sections   = sorted(set(v for v in sc_qs.values_list('section', flat=True) if v and v.strip()))
+    year_sems  = sorted(set(v for v in sc_qs.values_list('year_sem', flat=True) if v and v.strip()))
+    acad_years = sorted(set(v for v in sc_qs.values_list('academic_year', flat=True) if v and v.strip()))
+
+    # Build student list with counselor info for the assign card
+    students_with_info = json.dumps([
+        {
+            'username': sc.roll_number,
+            'branch': sc.branch or '',
+            'section': sc.section or '',
+            'year_sem': sc.year_sem or '',
+            'academic_year': sc.academic_year or '',
+            'counselor_name': sc.counselor_name or '',
+        }
+        for sc in sc_qs if sc.roll_number
+    ])
 
     context = {
         'all_students_json': json.dumps(processed_users),
+        'students_with_info': students_with_info,
         'is_superuser': request.user.is_superuser,
+        'filter_opts': json.dumps({
+            'branches': branches,
+            'sections': sections,
+            'year_sems': year_sems,
+            'acad_years': acad_years,
+        }),
     }
     return render(request, 'admin_bulk_manage.html', context)
 
@@ -320,15 +605,19 @@ def bulk_assign_counselor(request):
             student_year = data.get('student_year', '').strip()
             branch = data.get('branch', '').strip()
             section = data.get('section', '').strip()
-            action = data.get('action', 'assign') # 'assign' or 'remove'
+            year_sem = data.get('year_sem', '').strip()
+            academic_year = data.get('academic_year', '').strip()
+            action = data.get('action', 'assign')
             student_rolls_upper = [str(r).upper() for r in student_rolls]
             
             if action == 'assign':
                 update_dict = {}
                 if counselor_name: update_dict['counselor_name'] = counselor_name
-                if student_year: update_dict['student_year'] = student_year
-                if branch: update_dict['branch'] = branch
-                if section: update_dict['section'] = section
+                if student_year:   update_dict['student_year'] = student_year
+                if branch:         update_dict['branch'] = branch
+                if section:        update_dict['section'] = section
+                if year_sem:       update_dict['year_sem'] = year_sem
+                if academic_year:  update_dict['academic_year'] = academic_year
                 
                 if not update_dict:
                     return JsonResponse({'success': False, 'error': 'No fields provided for update'})
@@ -524,7 +813,14 @@ def counseling_form_view(request):
                 'student_name': '' # Leave blank for student to fill their actual name
             })
 
-    return render(request, 'student_counseling.html', {'form': form})
+    from .forms import BRANCH_CHOICES, SECTION_CHOICES, YEAR_SEM_CHOICES, ACADEMIC_YEAR_CHOICES
+    return render(request, 'student_counseling.html', {
+        'form': form,
+        'branch_choices': BRANCH_CHOICES[1:],        # skip blank placeholder
+        'section_choices': SECTION_CHOICES[1:],
+        'year_sem_choices': YEAR_SEM_CHOICES[1:],
+        'academic_year_choices': ACADEMIC_YEAR_CHOICES[1:],
+    })
 
 def success_view(request):
     try:
@@ -758,21 +1054,95 @@ def test_email_view(request):
         return HttpResponse(f"Failed to send email: {str(e)}", status=500)
 
 @login_required
+def admin_export_view(request):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+
+    # Build filter options from DB
+    sems          = sorted(set(v for v in StudentCounseling.objects.values_list('year_sem', flat=True) if v and v.strip()))
+    student_years = sorted(set(v for v in StudentCounseling.objects.values_list('student_year', flat=True) if v and v.strip()))
+    branches      = sorted(set(v for v in StudentCounseling.objects.values_list('branch', flat=True) if v and v.strip()))
+    sections      = sorted(set(v for v in StudentCounseling.objects.values_list('section', flat=True) if v and v.strip()))
+    acad_years    = sorted(set(v for v in StudentCounseling.objects.values_list('academic_year', flat=True) if v and v.strip()))
+
+    filter_data = json.dumps({
+        'sems':          sems,
+        'student_years': student_years,
+        'branches':      branches,
+        'sections':      sections,
+        'acad_years':    acad_years,
+    })
+
+    def _build_rows(req):
+        roll_filter  = req.GET.get('roll_number', '').strip()
+        ys_filter    = req.GET.get('year_sem', '').strip()
+        br_filter    = req.GET.get('branch', '').strip()
+        sec_filter   = req.GET.get('section', '').strip()
+        sty_filter   = req.GET.get('student_year', '').strip()
+        acad_filter  = req.GET.get('academic_year', '').strip()
+
+        all_qs = StudentCounseling.objects.all().order_by('roll_number', '-last_submission_date')
+        seen, latest_ids = set(), []
+        for sc in all_qs:
+            if sc.roll_number and sc.roll_number not in seen:
+                seen.add(sc.roll_number)
+                latest_ids.append(sc.id)
+        sc_qs = StudentCounseling.objects.filter(id__in=latest_ids)
+
+        if roll_filter: sc_qs = sc_qs.filter(roll_number__icontains=roll_filter)
+        if ys_filter:   sc_qs = sc_qs.filter(year_sem__iexact=ys_filter)
+        if br_filter:   sc_qs = sc_qs.filter(branch__iexact=br_filter)
+        if sec_filter:  sc_qs = sc_qs.filter(section__iexact=sec_filter)
+        if sty_filter:  sc_qs = sc_qs.filter(student_year__iexact=sty_filter)
+        if acad_filter: sc_qs = sc_qs.filter(academic_year__iexact=acad_filter)
+
+        registered = {u.username.upper(): u for u in User.objects.filter(is_staff=False, is_superuser=False)}
+        rows = []
+        for sc in sc_qs.order_by('roll_number'):
+            roll_up = (sc.roll_number or '').upper()
+            user = registered.get(roll_up)
+            rows.append({
+                'roll':         sc.roll_number or '',
+                'name':         sc.student_name or '',
+                'email':        sc.email or (user.email if user else ''),
+                'counselor':    sc.counselor_name or '',
+                'branch':       sc.branch or '',
+                'year':         sc.student_year or '',
+                'section':      sc.section or '',
+                'year_sem':     sc.year_sem or '',
+                'academic_year': sc.academic_year or '',
+            })
+        return rows
+
+    # JSON preview mode (AJAX call from the page)
+    if request.GET.get('preview') == '1':
+        rows = _build_rows(request)
+        return JsonResponse({'rows': rows, 'count': len(rows)})
+
+    total_count = User.objects.filter(is_staff=False, is_superuser=False).count()
+
+    context = {
+        'preview_json': '[]',   # empty on load — user must apply filters first
+        'filter_data':  filter_data,
+        'total_count':  total_count,
+        'is_superuser': request.user.is_superuser,
+    }
+    return render(request, 'admin_export.html', context)
+
+
+@login_required
 def export_students_csv(request):
     if not request.user.is_staff:
         return HttpResponse("Unauthorized", status=403)
         
-    import csv
-    from django.http import HttpResponse
-    import json
-    
     # Capture filters
-    roll_filter = request.GET.get('roll_number', '').strip()
-    ys_filter = request.GET.get('year_sem', '')
-    att_filter = request.GET.get('attendance_search', '').strip()
-    br_filter = request.GET.get('branch', '').strip()
-    sec_filter = request.GET.get('section', '').strip()
-    sty_filter = request.GET.get('student_year', '').strip()
+    roll_filter  = request.GET.get('roll_number', '').strip()
+    ys_filter    = request.GET.get('year_sem', '').strip()
+    att_filter   = request.GET.get('attendance_search', '').strip()
+    br_filter    = request.GET.get('branch', '').strip()
+    sec_filter   = request.GET.get('section', '').strip()
+    sty_filter   = request.GET.get('student_year', '').strip()
+    acad_filter  = request.GET.get('academic_year', '').strip()
     
     # 1. Fetch relevant users
     users_qs = User.objects.filter(is_superuser=False, is_staff=False)
@@ -788,11 +1158,12 @@ def export_students_csv(request):
             
     sc_qs = StudentCounseling.objects.filter(id__in=latest_ids)
     
-    if roll_filter: sc_qs = sc_qs.filter(roll_number__icontains=roll_filter)
-    if ys_filter: sc_qs = sc_qs.filter(year_sem__iexact=ys_filter.strip())
-    if br_filter: sc_qs = sc_qs.filter(branch__iexact=br_filter)
-    if sec_filter: sc_qs = sc_qs.filter(section__iexact=sec_filter)
-    if sty_filter: sc_qs = sc_qs.filter(student_year__iexact=sty_filter)
+    if roll_filter:  sc_qs = sc_qs.filter(roll_number__icontains=roll_filter)
+    if ys_filter:    sc_qs = sc_qs.filter(year_sem__iexact=ys_filter)
+    if br_filter:    sc_qs = sc_qs.filter(branch__iexact=br_filter)
+    if sec_filter:   sc_qs = sc_qs.filter(section__iexact=sec_filter)
+    if sty_filter:   sc_qs = sc_qs.filter(student_year__iexact=sty_filter)
+    if acad_filter:  sc_qs = sc_qs.filter(academic_year__iexact=acad_filter)
         
     if att_filter:
         try:

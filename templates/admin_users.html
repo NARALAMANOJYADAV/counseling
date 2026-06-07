@@ -1,770 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
 <div style="display:none;">{% load static %}</div>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Directory | Admin Portal</title>
-
-    <!-- Modern Typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
-    <!-- Styles from Dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'stylesheets/advanced_dashboard.css' %}">
-
-    <!-- React & Babel Standalone -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Boxicons CSS -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        :root { --accent: #e46033; --accent2: #f97316; --bg: #25252b; --card: #2e2e36; --border: rgba(228,96,51,0.25); }
+        body { background: var(--bg) !important; }
+        .sidebar { background: var(--bg) !important; border-right: 1px solid var(--border) !important; }
+        .logo span { color: var(--accent) !important; }
+        .nav-link.active { background: rgba(228,96,51,0.15) !important; border-left: 3px solid var(--accent) !important; }
+        .nav-link.active i, .nav-link.active span { color: var(--accent) !important; }
+        .nav-link:hover { background: rgba(228,96,51,0.08) !important; }
+        .main-content { background: var(--bg) !important; }
+        .ou-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+        .ou-input { background: #1a1a20 !important; border: 1px solid var(--border) !important; color: #fff !important; border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none; width: 100%; font-family: 'Outfit', sans-serif; }
+        .ou-input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(228,96,51,0.15); }
+        .ou-btn { border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.2s; font-family: 'Outfit', sans-serif; }
+        .ou-btn:hover { opacity: 0.85; }
+        .ou-btn-primary { background: var(--accent); color: #fff; }
+        .ou-btn-secondary { background: #3b3b45; color: #94a3b8; }
+        .ou-btn-danger { background: #ef4444; color: #fff; }
+        .ou-btn-green { background: #059669; color: #fff; }
+        .ou-btn-blue { background: #3b82f6; color: #fff; }
+        .ou-th { padding: 13px 14px; text-align: left; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid rgba(228,96,51,0.2); background: #1a1a20; white-space: nowrap; }
+        .ou-td { padding: 13px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .ou-tr:hover td { background: rgba(228,96,51,0.04); }
+        .ou-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 90%; max-width: 560px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        .modal-title { color: #fff; font-size: 18px; font-weight: 700; margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; }
+        .chip-count { background: rgba(228,96,51,0.15); color: var(--accent); border: 1px solid rgba(228,96,51,0.3); border-radius: 8px; padding: 4px 12px; font-size: 13px; font-weight: 700; }
+        .lbl { display: block; margin-bottom: 6px; font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
+        select.ou-input option { background: #25252b; }
+    </style>
 </head>
+<body>
+<div id="root"></div>
 
-<body style="background: #0f172a; color: #f8fafc; font-family: 'Outfit', sans-serif;">
-    <div id="root"></div>
+<script>
+    window.CUR_USER     = "{{ user.username|default:'Admin' }}";
+    window.ALL_STUDENTS = JSON.parse('{{ all_students_json|escapejs|default:"[]" }}');
+    window.IS_SUPERUSER = "{{ is_superuser }}" === "True";
+    window.FILTER_DATA  = JSON.parse('{{ filter_data|escapejs|default:"{}" }}');
+    window.URLS = {
+        'dashboard':      "{% url 'admin_dashboard' %}",
+        'approvals':      "{% url 'admin_approvals' %}",
+        'student_search': "{% url 'student_search' %}",
+        'users':          "{% url 'admin_users' %}",
+        'bulk_ops':       "{% url 'admin_bulk_manage' %}",
+        'export':         "{% url 'admin_export' %}",
+        'django_admin':   "/admin/",
+        'logout':         "{% url 'logout' %}"
+    };
+    window.CSRF_TOKEN = "{{ csrf_token }}";
+</script>
 
-    <script>
-        window.CUR_USER = "{{ user.username|default:'Admin' }}";
-        window.ALL_STUDENTS = JSON.parse('{{ all_students_json|escapejs|default:"[]" }}');
-        window.IS_SUPERUSER = "{{ is_superuser }}" === "True";
-        
-        window.FILTER_DATA = JSON.parse('{{ filter_data|escapejs|default:"{}" }}');
-        
+{% verbatim %}
+<script type="text/babel">
+    const { useState } = React;
 
-        window.URLS = {
-            'dashboard': "{% url 'admin_dashboard' %}",
-            'counseling': "/admin/counseling/studentcounseling/",
-            'grievance': "/admin/counseling/grievance/",
-            'users_admin': "/admin/auth/user/",
-            'bulk_ops': "{% url 'admin_bulk_manage' %}",
-            'logout': "{% url 'logout' %}"
-        };
-        window.CSRF_TOKEN = "{{ csrf_token }}";
-    </script>
+    const NAV = [
+        { key:'dashboard',      label:'Home',            icon:'bxs-dashboard',    active:false },
+        { key:'approvals',      label:'Approvals',       icon:'bx-list-check',    active:false },
+        { key:'student_search', label:'Student Search',  icon:'bx-search-alt-2',  active:false },
+        { key:'users',          label:'Users',           icon:'bx-group',         active:true  },
+        { key:'bulk_ops',       label:'Bulk Operations', icon:'bx-layer-plus',    active:false },
+        { key:'export',         label:'Export CSV',      icon:'bx-export',        active:false },
+        { key:'django_admin',   label:'Admin Panel',     icon:'bxs-cog',          active:false, superOnly:true },
+    ];
 
-    {% verbatim %}
-    <script type="text/babel">
-        const { useState } = React;
+    const ROLE_COLORS = {
+        'Super Admin': '#ef4444', 'Counselor': '#10b981', 'HOD': '#f59e0b',
+        'Incharge': '#8b5cf6', 'Director': '#ec4899', 'Staff member': '#64748b',
+    };
+    const roleColor = r => ROLE_COLORS[r] || '#e46033';
 
-        const getRoleColor = (role) => {
-            switch (role) {
-                case 'Super Admin': return '#ef4444';
-                case 'Counselor': return '#10b981';
-                case 'HOD': return '#f59e0b';
-                case 'Incharge': return '#8b5cf6';
-                case 'Director': return '#ec4899';
-                case 'Staff member': return '#64748b';
-                default: return '#3b82f6';
-            }
-        };
+    const BRANCHES = ['CSE','AIDS','ECE','EEE','MECH','CIVIL','IT','CHEM'];
+    const SECTIONS = ['A','B','C','D','E','F','G','H','I','J'];
 
-        const FilterBar = () => {
-            const fd = window.FILTER_DATA;
-            const years = fd.years || [];
-            const sems = fd.sems || [];
-            const student_years = fd.student_years || [];
-            const branches = fd.branches || [];
-            const sections = fd.sections || [];
-            const current = fd.current || {};
-            
-            const handleExport = () => {
-                window.location.href = "/export-students/" + window.location.search;
-            };
-
-            return (
-                <div style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <form action="." method="GET" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Roll Number</label>
-                            <input type="text" name="roll_number" defaultValue={current.roll} placeholder="e.g. 20KB1A42" style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', width: '120px' }} />
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Year/Sem</label>
-                            <select name="year_sem" defaultValue={current.ys} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '120px' }}>
-                                <option value="">All</option>
-                                {sems.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Student Year</label>
-                            <select name="student_year" defaultValue={current.sy} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '100px' }}>
-                                <option value="">All</option>
-                                {student_years.map(sy => <option key={sy} value={sy}>{sy}</option>)}
-                            </select>
-                        </div>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Branch</label>
-                            <select name="branch" defaultValue={current.br} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '100px' }}>
-                                <option value="">All</option>
-                                {branches.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                        </div>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Section</label>
-                            <select name="section" defaultValue={current.sec} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', minWidth: '80px' }}>
-                                <option value="">All</option>
-                                {sections.map(sec => <option key={sec} value={sec}>{sec}</option>)}
-                            </select>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>Att % (find)</label>
-                            <input type="text" name="attendance_search" defaultValue={current.att} placeholder="e.g. 75" style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '8px', borderRadius: '6px', width: '80px' }} />
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '10px', alignSelf: 'flex-end', marginTop: '22px' }}>
-                            <button type="submit" style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
-                                Apply
-                            </button>
-                            <button type="button" onClick={handleExport} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <i className='bx bx-download'></i> Export CSV
-                            </button>
-                            <a href="?" style={{ color: '#ef4444', textDecoration: 'none', fontSize: '13px', display: 'flex', alignItems: 'center', marginLeft: '5px' }}>Clear All</a>
-                        </div>
-                    </form>
+    /* ── Modal wrapper ── */
+    const Modal = ({ title, icon, onClose, children }) => (
+        <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
+            <div className="modal-box">
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
+                    <h2 className="modal-title"><i className={`bx ${icon}`} style={{color:'#e46033'}}></i>{title}</h2>
+                    <button onClick={onClose} style={{background:'transparent',border:'none',color:'#94a3b8',cursor:'pointer',fontSize:'22px',lineHeight:1}}>&times;</button>
                 </div>
-            );
+                {children}
+            </div>
+        </div>
+    );
+
+    const UsersPage = () => {
+        const fd = window.FILTER_DATA;
+        const cur = fd.current || {};
+
+        /* selection */
+        const [selected, setSelected] = useState([]);
+        /* bulk assign fields */
+        const [counselorName, setCounselorName] = useState('');
+        const [branch, setBranch]               = useState('');
+        const [section, setSection]             = useState('');
+        /* modals */
+        const [showRangeModal, setShowRangeModal] = useState(false);
+        const [rangeStart, setRangeStart]         = useState('');
+        const [rangeEnd, setRangeEnd]             = useState('');
+        const [busy, setBusy]                     = useState(false);
+
+        const toggleAll = e => setSelected(e.target.checked ? window.ALL_STUDENTS.map(s=>s.username) : []);
+        const toggleOne = u => setSelected(p => p.includes(u) ? p.filter(x=>x!==u) : [...p, u]);
+
+        const post = async (url, body) => {
+            const r = await fetch(url, {
+                method:'POST',
+                headers:{'Content-Type':'application/json','X-CSRFToken':window.CSRF_TOKEN},
+                body: JSON.stringify(body)
+            });
+            return r.json();
         };
 
-        const UserDirectoryPage = () => {
-            const [selectedUsers, setSelectedUsers] = useState([]);
-            const [counselorName, setCounselorName] = useState("");
-            const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-            const [isRangeModalOpen, setIsRangeModalOpen] = useState(false);
-            const [isAddRangeModalOpen, setIsAddRangeModalOpen] = useState(false);
-            const [rangeStart, setRangeStart] = useState("");
-            const [rangeEnd, setRangeEnd] = useState("");
-            
-            // New Fields for Bulk Updates/Creation
-            const [studentYear, setStudentYear] = useState("");
-            const [branch, setBranch] = useState("");
-            const [section, setSection] = useState("");
-            
-            const [bulkStudentsText, setBulkStudentsText] = useState("");
-            const [isSubmitting, setIsSubmitting] = useState(false);
+        const bulkAssign = async (action='assign') => {
+            if (!selected.length) return alert('Select at least one student.');
+            if (action==='assign' && !counselorName.trim() && !branch && !section)
+                return alert('Enter at least one property to update.');
+            setBusy(true);
+            const d = await post('/bulk-assign-counselor/', {
+                roll_numbers: selected, counselor_name: action==='remove'?'':counselorName.trim(),
+                branch, section, action
+            });
+            setBusy(false);
+            if (d.success) { alert(`Updated ${d.updated} students.`); window.location.reload(); }
+            else alert('Error: '+d.error);
+        };
 
-            const handleSelectAll = (e) => {
-                if (e.target.checked) {
-                    setSelectedUsers(window.ALL_STUDENTS.map(s => s.username));
-                } else {
-                    setSelectedUsers([]);
-                }
-            };
+        const bulkDelete = async () => {
+            if (!selected.length) return;
+            if (!confirm(`Permanently delete ${selected.length} student(s)? This cannot be undone.`)) return;
+            setBusy(true);
+            const d = await post('/bulk-delete-students/', { roll_numbers: selected });
+            setBusy(false);
+            if (d.success) { alert(`Deleted ${d.deleted} records.`); window.location.reload(); }
+            else alert('Error: '+d.error);
+        };
 
-            const handleSelectUser = (username) => {
-                if (selectedUsers.includes(username)) {
-                    setSelectedUsers(selectedUsers.filter(u => u !== username));
-                } else {
-                    setSelectedUsers([...selectedUsers, username]);
-                }
-            };
+        const selectRange = () => {
+            if (!rangeStart.trim() || !rangeEnd.trim()) return alert('Enter both start and end roll numbers.');
+            const s = rangeStart.trim().toUpperCase(), e = rangeEnd.trim().toUpperCase();
+            const found = window.ALL_STUDENTS.filter(x => x.username.toUpperCase()>=s && x.username.toUpperCase()<=e).map(x=>x.username);
+            if (!found.length) return alert('No students found in that range.');
+            setSelected(p => Array.from(new Set([...p,...found])));
+            setShowRangeModal(false);
+            alert(`Added ${found.length} students to selection.`);
+        };
 
-            const handleBulkAssign = async (action = 'assign') => {
-                if (action === 'assign' && !counselorName.trim()) {
-                    alert("Please enter a counselor name.");
-                    return;
-                }
-                if (selectedUsers.length === 0) {
-                    alert("Please select at least one student.");
-                    return;
-                }
-                
-                setIsSubmitting(true);
-                try {
-                    const res = await fetch("/bulk-assign-counselor/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({
-                            roll_numbers: selectedUsers,
-                            counselor_name: action === 'remove' ? '' : counselorName.trim(),
-                            student_year: studentYear.trim(),
-                            branch: branch.trim(),
-                            section: section.trim(),
-                            action: action
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert(action === 'remove' ? `Successfully unassigned counselor for ${data.updated} students.` : `Successfully assigned counselor for ${data.updated} students.`);
-                        window.location.reload();
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                } catch (e) {
-                    alert("Error updating counselor.");
-                }
-                setIsSubmitting(false);
-            };
-
-            const handleBulkDelete = async () => {
-                if (selectedUsers.length === 0) return;
-                if (!window.confirm(`Are you sure you want to PERMANENTLY delete ${selectedUsers.length} selected students? This cannot be undone.`)) {
-                    return;
-                }
-                setIsSubmitting(true);
-                try {
-                    const res = await fetch("/bulk-delete-students/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({
-                            roll_numbers: selectedUsers
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert(`Successfully deleted ${data.deleted} student records.`);
-                        window.location.reload();
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                } catch (e) {
-                    alert("Error deleting students.");
-                }
-                setIsSubmitting(false);
-            };
-
-            const handleSelectRange = () => {
-                if (!rangeStart.trim() || !rangeEnd.trim()) {
-                    alert("Please enter both start and end roll numbers.");
-                    return;
-                }
-                
-                const start = rangeStart.trim().toUpperCase();
-                const end = rangeEnd.trim().toUpperCase();
-                
-                const filtered = window.ALL_STUDENTS.filter(s => {
-                    const r = s.username.toUpperCase();
-                    // Basic string comparison is usually fine for Roll Numbers of same length/format
-                    return r >= start && r <= end;
-                }).map(s => s.username);
-                
-                if (filtered.length > 0) {
-                    const newSet = new Set([...selectedUsers, ...filtered]);
-                    setSelectedUsers(Array.from(newSet));
-                    setIsRangeModalOpen(false);
-                    alert(`Selected ${filtered.length} additional students in range.`);
-                } else {
-                    alert("No students found in that range.");
-                }
-            };
-
-            const handleBulkAdd = async () => {
-                if (!bulkStudentsText.trim()) {
-                    alert("Please enter student data.");
-                    return;
-                }
-                
-                const lines = bulkStudentsText.trim().split("\n");
-                const students = [];
-                for (let line of lines) {
-                    const parts = line.split(",").map(p => p.trim());
-                    if (parts.length >= 2 && parts[0]) {
-                        students.push({
-                            roll_number: parts[0],
-                            student_name: parts[1],
-                            email: parts[2] || "",
-                            counselor_name: parts[3] || ""
-                        });
-                    }
-                }
-                
-                if (students.length === 0) {
-                    alert("No valid student data found. Format requires at least Roll Number and Name separated by comma.");
-                    setIsSubmitting(false);
-                    return;
-                }
-
-                setIsSubmitting(true);
-                try {
-                    const res = await fetch("/bulk-add-students/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({ students })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert(`Successfully added ${data.created} students.`);
-                        window.location.reload();
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                } catch (e) {
-                    alert("Error adding students.");
-                }
-                setIsSubmitting(false);
-            };
-
-            const handleBulkAddRange = async () => {
-                if (!rangeStart.trim() || !rangeEnd.trim()) {
-                    alert("Please enter both start and end roll numbers.");
-                    return;
-                }
-                setIsSubmitting(true);
-                try {
-                    const res = await fetch("/bulk-add-students/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({ 
-                            mode: 'range',
-                            start: rangeStart.trim(),
-                            end: rangeEnd.trim(),
-                            counselor_name: counselorName.trim(),
-                            student_year: studentYear.trim(),
-                            branch: branch.trim(),
-                            section: section.trim()
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert(`Successfully created ${data.created} new students in range.`);
-                        window.location.reload();
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                } catch (e) {
-                    alert("Error creating students.");
-                }
-                setIsSubmitting(false);
-            };
-
-            return (
-                <div className="dashboard-layout">
-                    <aside className="sidebar">
-                        <div className="logo">
-                            <i className='bx bxs-user-detail' style={{ color: '#818cf8', fontSize: '24px' }}></i>
-                            <span>USER MGMT</span>
+        return (
+            <div className="dashboard-layout">
+                {/* Sidebar */}
+                <aside className="sidebar">
+                    <div className="logo">
+                        <i className='bx bxs-user-detail' style={{color:'#e46033',fontSize:'24px'}}></i>
+                        <span>ADMIN PANEL</span>
+                    </div>
+                    <nav className="nav-links">
+                        {NAV.map(item => {
+                            if (item.superOnly && !window.IS_SUPERUSER) return null;
+                            return (
+                                <div key={item.key} className="nav-item">
+                                    <a href={window.URLS[item.key]||'#'} className={`nav-link${item.active?' active':''}`}>
+                                        <i className={`bx ${item.icon}`}></i>
+                                        <span>{item.label}</span>
+                                    </a>
+                                </div>
+                            );
+                        })}
+                        <div className="nav-item logout-item">
+                            <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
+                                <i className='bx bx-log-out' style={{color:'#ef4444'}}></i>
+                                <span>Exit Portal</span>
+                            </a>
                         </div>
+                    </nav>
+                </aside>
 
-                        <nav className="nav-links">
-                            <div className="nav-item">
-                                <a href={window.URLS['dashboard']} className="nav-link">
-                                    <i className='bx bxs-dashboard' style={{ color: '#94a3b8' }}></i>
-                                    <span>Home</span>
-                                </a>
-                            </div>
-                            <div className="nav-item">
-                                <a href={window.URLS['counseling']} className="nav-link">
-                                    <i className='bx bx-list-ul' style={{ color: '#94a3b8' }}></i>
-                                    <span>Approvals</span>
-                                </a>
-                            </div>
-                            <div className="nav-item">
-                                <a href="#" className="nav-link active">
-                                    <i className='bx bxs-group' style={{ color: 'white' }}></i>
-                                    <span>Users Registry</span>
-                                </a>
-                            </div>
-                            <div className="nav-item">
-                                <a href={window.URLS['bulk_ops']} className="nav-link">
-                                    <i className='bx bx-layer-plus' style={{ color: '#94a3b8' }}></i>
-                                    <span>Bulk Operations</span>
-                                </a>
-                            </div>
+                {/* Main */}
+                <main className="main-content">
+                    {/* Header */}
+                    <header className="header">
+                        <div className="welcome-section">
+                            <h1 style={{color:'#fff'}}>User Registry</h1>
+                            <p style={{color:'#94a3b8'}}>Complete directory of all registered accounts and roles.</p>
+                        </div>
+                        <div className="profile-chip" style={{background:'#2e2e36',border:'1px solid rgba(228,96,51,0.3)'}}>
+                            <div className="avatar" style={{background:'#e46033'}}>{(window.CUR_USER||'A')[0].toUpperCase()}</div>
+                            <span>{window.CUR_USER||'Admin'}</span>
+                        </div>
+                    </header>
 
-                            <div className="nav-item logout-item">
-                                <a href={window.URLS['logout']} className="nav-link logout-link-sidebar">
-                                    <i className='bx bx-log-out' style={{ color: '#ef4444' }}></i>
-                                    <span>Exit Portal</span>
-                                </a>
+                    {/* Stats row */}
+                    <div style={{display:'flex',gap:'12px',marginBottom:'20px',flexWrap:'wrap'}}>
+                        {[
+                            {label:'Total Accounts', val:window.ALL_STUDENTS.length, color:'#e46033'},
+                            {label:'Selected',       val:selected.length,            color:'#f59e0b'},
+                        ].map(c=>(
+                            <div key={c.label} className="ou-card" style={{padding:'14px 22px'}}>
+                                <div style={{fontSize:'11px',color:'#64748b',fontWeight:'700',textTransform:'uppercase'}}>{c.label}</div>
+                                <div style={{fontSize:'26px',fontWeight:'800',color:c.color}}>{c.val}</div>
                             </div>
-                        </nav>
-                    </aside>
+                        ))}
+                        <div style={{marginLeft:'auto',display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap'}}>
+                            <a href={window.URLS['export']} className="ou-btn ou-btn-green">
+                                <i className='bx bx-export'></i> Export CSV
+                            </a>
+                            <a href={window.URLS['bulk_ops']} className="ou-btn ou-btn-blue">
+                                <i className='bx bx-layer-plus'></i> Bulk Operations
+                            </a>
+                        </div>
+                    </div>
 
-                    <main className="main-content">
-                        <header className="header">
-                            <div className="welcome-section">
-                                <h1 style={{ color: '#fff' }}>User Registry</h1>
-                                <p>Complete directory of all registered accounts and roles.</p>
-                                <div style={{ marginTop: '10px' }}>
-                                    <a href={window.URLS['users_admin']} style={{ 
-                                        color: '#818cf8', 
-                                        textDecoration: 'none', 
-                                        fontSize: '14px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '5px'
-                                    }}>
-                                        <box-icon name='cog' color='#818cf8' size='xs'></box-icon>
-                                        Manage Official Users & Permissions
+                    {/* Filter bar */}
+                    <div className="ou-card" style={{padding:'18px 20px',marginBottom:'16px'}}>
+                        <form action="." method="GET">
+                            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:'12px',alignItems:'flex-end'}}>
+                                <div>
+                                    <label className="lbl">Roll Number</label>
+                                    <input className="ou-input" type="text" name="roll_number" defaultValue={cur.roll} placeholder="e.g. 22KB1A42" />
+                                </div>
+                                <div>
+                                    <label className="lbl">Year / Sem</label>
+                                    <select className="ou-input" name="year_sem" defaultValue={cur.ys}>
+                                        <option value="">All</option>
+                                        {(fd.sems||[]).map(s=><option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="lbl">Branch</label>
+                                    <select className="ou-input" name="branch" defaultValue={cur.br}>
+                                        <option value="">All</option>
+                                        {BRANCHES.map(b=><option key={b} value={b}>{b}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="lbl">Section</label>
+                                    <select className="ou-input" name="section" defaultValue={cur.sec}>
+                                        <option value="">All</option>
+                                        {SECTIONS.map(s=><option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="lbl">Att %</label>
+                                    <input className="ou-input" type="text" name="attendance_search" defaultValue={cur.att} placeholder="e.g. 75" />
+                                </div>
+                                <div style={{display:'flex',gap:'8px',alignItems:'flex-end'}}>
+                                    <button type="submit" className="ou-btn ou-btn-primary" style={{flex:1}}>
+                                        <i className='bx bx-search'></i> Apply
+                                    </button>
+                                    <a href="?" className="ou-btn ou-btn-secondary">
+                                        <i className='bx bx-reset'></i>
                                     </a>
                                 </div>
                             </div>
+                        </form>
+                    </div>
 
-                            <div className="profile-chip" style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div className="avatar" style={{ background: '#6366f1' }}>{(window.CUR_USER || 'A')[0].toUpperCase()}</div>
-                                <span>{window.CUR_USER || 'Admin'}</span>
-                            </div>
-                        </header>
-                        
-                        <FilterBar />
-
-                        <div className="recent-submissions" style={{ marginTop: '1rem' }}>
-                            <div className="submission-box" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '12px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #334155', paddingBottom: '10px', flexWrap: 'wrap', gap: '15px' }}>
-                                    <div>
-                                        <h2 style={{ color: '#fff', margin: 0 }}>Registered Accounts</h2>
-                                        <div style={{ color: '#94a3b8', fontSize: '14px', marginTop: '5px' }}>Total Accounts: {window.ALL_STUDENTS.length}</div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                        {selectedUsers.length > 0 && (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(99, 102, 241, 0.1)', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)', flexWrap: 'wrap' }}>
-                                                <span style={{ fontSize: '13px', color: '#818cf8', fontWeight: 'bold' }}>{selectedUsers.length} selected</span>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Enter Counselor Name" 
-                                                    value={counselorName}
-                                                    onChange={e => setCounselorName(e.target.value)}
-                                                    style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '13px', width: '130px' }}
-                                                />
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Year (e.g. 1)" 
-                                                    value={studentYear}
-                                                    onChange={e => setStudentYear(e.target.value)}
-                                                    style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '13px', width: '90px' }}
-                                                />
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Branch" 
-                                                    value={branch}
-                                                    onChange={e => setBranch(e.target.value)}
-                                                    style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '13px', width: '90px' }}
-                                                />
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Sec" 
-                                                    value={section}
-                                                    onChange={e => setSection(e.target.value)}
-                                                    style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '13px', width: '60px' }}
-                                                />
-                                                <button onClick={() => handleBulkAssign('assign')} disabled={isSubmitting} style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }} title="Update properties and assign counselor">
-                                                    Update properties
-                                                </button>
-                                                <button onClick={() => handleBulkAssign('remove')} disabled={isSubmitting} style={{ background: '#eab308', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }} title="Remove counselor from students">
-                                                    Remove Counselor
-                                                </button>
-                                                {window.IS_SUPERUSER && (
-                                                    <button onClick={handleBulkDelete} disabled={isSubmitting} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                        <box-icon name='trash' type='solid' color='#fff' size='xs'></box-icon> Delete All
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                        
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <a href={window.URLS['bulk_ops']} style={{ textDecoration: 'none', background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <i className='bx bx-link-external'></i> Go To Bulk Operations
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <thead>
-                                            <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
-                                                <th style={{ textAlign: 'left', padding: '12px', width: '40px' }}>
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={selectedUsers.length === window.ALL_STUDENTS.length && window.ALL_STUDENTS.length > 0} 
-                                                        onChange={handleSelectAll} 
-                                                        style={{ cursor: 'pointer' }}
-                                                    />
-                                                </th>
-                                                <th style={{ textAlign: 'left', padding: '12px' }}>Roll / Username</th>
-                                                <th style={{ textAlign: 'left', padding: '12px' }}>Email Address</th>
-                                                <th style={{ textAlign: 'left', padding: '12px' }}>Counselor</th>
-                                                <th style={{ textAlign: 'left', padding: '12px' }}>Role</th>
-                                                <th style={{ textAlign: 'left', padding: '12px' }}>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {window.ALL_STUDENTS.length > 0 ? window.ALL_STUDENTS.map(student => (
-                                                <tr key={student.id} style={{ borderBottom: '1px solid #0f172a', background: selectedUsers.includes(student.username) ? 'rgba(99, 102, 241, 0.05)' : 'transparent' }}>
-                                                    <td style={{ padding: '12px' }}>
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={selectedUsers.includes(student.username)}
-                                                            onChange={() => handleSelectUser(student.username)}
-                                                            style={{ cursor: 'pointer' }}
-                                                        />
-                                                    </td>
-                                                    <td style={{ padding: '12px', color: '#fff', fontWeight: '500' }}>
-                                                        {student.username}
-                                                        {student.is_manual && <span style={{ marginLeft: '5px', fontSize: '10px', background: '#3b82f644', color: '#60a5fa', padding: '2px 4px', borderRadius: '4px' }}>Manual</span>}
-                                                    </td>
-                                                    <td style={{ padding: '12px', color: '#94a3b8', fontSize: '14px' }}>
-                                                        {student.email || <span style={{ color: '#475569' }}>-</span>}
-                                                    </td>
-                                                    <td style={{ padding: '12px', color: '#cbd5e1', fontSize: '14px', fontWeight: '500' }}>
-                                                        {student.counselor_name || <span style={{ color: '#475569', fontStyle: 'italic' }}>Unassigned</span>}
-                                                    </td>
-                                                    <td style={{ padding: '12px' }}>
-                                                        <span style={{
-                                                            padding: '4px 10px',
-                                                            borderRadius: '6px',
-                                                            fontSize: '11px',
-                                                            fontWeight: '700',
-                                                            textTransform: 'uppercase',
-                                                            backgroundColor: getRoleColor(student.role_label) + '22',
-                                                            color: getRoleColor(student.role_label),
-                                                            border: `1px solid ${getRoleColor(student.role_label)}44`
-                                                        }}>
-                                                            {student.role_label}
-                                                        </span>
-                                                    </td>
-                                                    <td style={{ padding: '12px' }}>
-                                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                                            {student.username !== window.CUR_USER && (
-                                                                <form method="POST" action={`/delete-student/${student.id}/`} onSubmit={(e) => {
-                                                                    if (!window.confirm(`Are you sure you want to delete account ${student.username}?`)) {
-                                                                        e.preventDefault();
-                                                                    }
-                                                                }} style={{ margin: 0 }}>
-                                                                    <input type="hidden" name="csrfmiddlewaretoken" value={window.CSRF_TOKEN} />
-                                                                    <button type="submit" style={{
-                                                                        background: 'transparent',
-                                                                        color: '#ef4444',
-                                                                        border: '1px solid #ef444444',
-                                                                        padding: '4px 12px',
-                                                                        borderRadius: '6px',
-                                                                        cursor: 'pointer',
-                                                                        fontSize: '12px',
-                                                                        fontWeight: 'bold',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: '5px',
-                                                                        transition: 'all 0.2s'
-                                                                    }}>
-                                                                        <box-icon name='trash' type='solid' color='#ef4444' size='xs'></box-icon>
-                                                                        Remove
-                                                                    </button>
-                                                                </form>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )) : (
-                                                <tr>
-                                                    <td colSpan="6" style={{ padding: '30px', color: '#94a3b8', textAlign: 'center' }}>
-                                                        No accounts found.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                    {/* Bulk action bar — shown when rows selected */}
+                    {selected.length > 0 && (
+                        <div className="ou-card" style={{padding:'14px 20px',marginBottom:'14px',borderColor:'rgba(228,96,51,0.4)'}}>
+                            <div style={{display:'flex',gap:'12px',alignItems:'center',flexWrap:'wrap'}}>
+                                <span className="chip-count">{selected.length} selected</span>
+                                <input className="ou-input" type="text" placeholder="Counselor name" value={counselorName} onChange={e=>setCounselorName(e.target.value)} style={{width:'150px'}} />
+                                <select className="ou-input" value={branch} onChange={e=>setBranch(e.target.value)} style={{width:'110px'}}>
+                                    <option value="">Branch</option>
+                                    {BRANCHES.map(b=><option key={b} value={b}>{b}</option>)}
+                                </select>
+                                <select className="ou-input" value={section} onChange={e=>setSection(e.target.value)} style={{width:'90px'}}>
+                                    <option value="">Section</option>
+                                    {SECTIONS.map(s=><option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <button className="ou-btn ou-btn-primary" onClick={()=>bulkAssign('assign')} disabled={busy}>
+                                    <i className='bx bx-save'></i> Update Properties
+                                </button>
+                                <button className="ou-btn" style={{background:'#854d0e',color:'#fef3c7'}} onClick={()=>bulkAssign('remove')} disabled={busy}>
+                                    <i className='bx bx-user-minus'></i> Remove Counselor
+                                </button>
+                                <button className="ou-btn ou-btn-secondary" onClick={()=>setShowRangeModal(true)}>
+                                    <i className='bx bx-selection'></i> Select by Range
+                                </button>
+                                {window.IS_SUPERUSER && (
+                                    <button className="ou-btn ou-btn-danger" onClick={bulkDelete} disabled={busy}>
+                                        <i className='bx bx-trash'></i> Delete Selected
+                                    </button>
+                                )}
+                                <button className="ou-btn ou-btn-secondary" onClick={()=>setSelected([])}>
+                                    <i className='bx bx-x'></i> Clear
+                                </button>
                             </div>
                         </div>
-                        
-                        {isAddModalOpen && (
-                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                                <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '600px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                        <h2 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <i className='bx bx-user-plus' style={{ color: '#10b981' }}></i> Add Multiple Students
-                                        </h2>
-                                        <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '24px' }}>&times;</button>
-                                    </div>
-                                    
-                                    <div style={{ marginBottom: '1rem', color: '#94a3b8', fontSize: '14px' }}>
-                                        <p style={{ marginBottom: '5px' }}>Enter one student per line in the format:</p>
-                                        <p><strong style={{ color: '#cbd5e1' }}>Roll Number, Full Name, Email Address, Counselor Name</strong></p>
-                                        <div style={{ marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '12px', color: '#64748b' }}>
-                                            Email and Counselor Name are optional. E.g.<br/>
-                                            20KB1A4240, John Doe, john@example.com, Dr. Smith<br/>
-                                            20KB1A4241, Jane Doe, , Dr. Smith<br/>
-                                            20KB1A4242, Mark
-                                        </div>
-                                    </div>
-                                    
-                                    <textarea 
-                                        value={bulkStudentsText}
-                                        onChange={e => setBulkStudentsText(e.target.value)}
-                                        placeholder="20KB1A4240, John Doe, john@example.com, Dr. Smith&#10;20KB1A4241, Jane Doe"
-                                        style={{ width: '100%', height: '200px', background: '#0f172a', color: '#fff', border: '1px solid #334155', borderRadius: '8px', padding: '15px', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }}
-                                    ></textarea>
-                                    
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
-                                        <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                            Cancel
-                                        </button>
-                                        <button onClick={handleBulkAdd} disabled={isSubmitting} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                            {isSubmitting ? 'Adding...' : 'Add Students'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {/* Select by Range Modal */}
-                        {isRangeModalOpen && (
-                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                                <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '400px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                        <h2 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                            <i className='bx bx-move-horizontal' style={{ color: '#3b82f6' }}></i> Select Students by Range
-                                        </h2>
-                                        <button onClick={() => setIsRangeModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '24px' }}>&times;</button>
-                                    </div>
-                                    
-                                    <div style={{ marginBottom: '1rem', color: '#94a3b8', fontSize: '14px' }}>
-                                        <p style={{ marginBottom: '15px' }}>Select EXISTING students between two range numbers.</p>
-                                        
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                            <div>
-                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Start Roll Number</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="e.g. 20KB1A4201" 
-                                                    value={rangeStart}
-                                                    onChange={e => setRangeStart(e.target.value)}
-                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>End Roll Number</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="e.g. 20KB1A4260" 
-                                                    value={rangeEnd}
-                                                    onChange={e => setRangeEnd(e.target.value)}
-                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                                                />
-                                            </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                                                <div>
-                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Year</label>
-                                                    <input type="text" placeholder="e.g. 1" value={studentYear} onChange={e => setStudentYear(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
-                                                </div>
-                                                <div>
-                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Branch</label>
-                                                    <input type="text" placeholder="CS" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
-                                                </div>
-                                                <div>
-                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Sec</label>
-                                                    <input type="text" placeholder="A" value={section} onChange={e => setSection(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
-                                        <button onClick={() => setIsRangeModalOpen(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                            Cancel
-                                        </button>
-                                        <button onClick={handleSelectRange} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                            Select Range
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {/* Add Students By Range Modal */}
-                        {isAddRangeModalOpen && (
-                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                                <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '400px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                        <h2 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                            <i className='bx bx-layer-plus' style={{ color: '#059669' }}></i> Add Students by Range
-                                        </h2>
-                                        <button onClick={() => setIsAddRangeModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '24px' }}>&times;</button>
-                                    </div>
-                                    
-                                    <div style={{ marginBottom: '1rem', color: '#94a3b8', fontSize: '14px' }}>
-                                        <p style={{ marginBottom: '15px' }}>Automatically generate and add NEW student profiles sequentially.</p>
-                                        
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                            <div>
-                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Start Roll Number</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="e.g. 20KB1A4201" 
-                                                    value={rangeStart}
-                                                    onChange={e => setRangeStart(e.target.value)}
-                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>End Roll Number</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="e.g. 20KB1A4260" 
-                                                    value={rangeEnd}
-                                                    onChange={e => setRangeEnd(e.target.value)}
-                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Assign to Counselor (Optional)</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="e.g. Dr. Roberts" 
-                                                    value={counselorName}
-                                                    onChange={e => setCounselorName(e.target.value)}
-                                                    style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                                                />
-                                            </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                                                <div>
-                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Year</label>
-                                                    <input type="text" placeholder="e.g. 1" value={studentYear} onChange={e => setStudentYear(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
-                                                </div>
-                                                <div>
-                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Branch</label>
-                                                    <input type="text" placeholder="CS" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
-                                                </div>
-                                                <div>
-                                                    <label style={{ display: 'block', marginBottom: '5px', color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px' }}>Sec</label>
-                                                    <input type="text" placeholder="A" value={section} onChange={e => setSection(e.target.value)} style={{ width: '100%', background: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '10px', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}/>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
-                                        <button onClick={() => setIsAddRangeModalOpen(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                            Cancel
-                                        </button>
-                                        <button onClick={handleBulkAddRange} disabled={isSubmitting} style={{ background: '#059669', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                            {isSubmitting ? 'Adding...' : 'Generate Profiles'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </main>
-                </div>
-            );
-        };
+                    )}
 
-        window.addEventListener('load', () => {
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(<UserDirectoryPage />);
-        });
-    </script>
-    {% endverbatim %}
+                    {/* Table */}
+                    <div className="ou-card" style={{overflow:'hidden'}}>
+                        <div style={{padding:'16px 20px',borderBottom:'1px solid rgba(228,96,51,0.15)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                            <h3 style={{margin:0,color:'#fff',fontSize:'15px',fontWeight:'700',display:'flex',alignItems:'center',gap:'8px'}}>
+                                <i className='bx bx-group' style={{color:'#e46033'}}></i>
+                                Registered Accounts
+                            </h3>
+                            <span style={{fontSize:'12px',color:'#64748b'}}>{window.ALL_STUDENTS.length} total</span>
+                        </div>
+                        <div style={{overflowX:'auto'}}>
+                            <table style={{width:'100%',borderCollapse:'collapse'}}>
+                                <thead>
+                                    <tr>
+                                        <th className="ou-th" style={{width:'40px'}}>
+                                            <input type="checkbox"
+                                                checked={selected.length===window.ALL_STUDENTS.length && window.ALL_STUDENTS.length>0}
+                                                onChange={toggleAll}
+                                                style={{cursor:'pointer',accentColor:'#e46033'}} />
+                                        </th>
+                                        <th className="ou-th">Roll / Username</th>
+                                        <th className="ou-th">Email</th>
+                                        <th className="ou-th">Counselor</th>
+                                        <th className="ou-th">Role</th>
+                                        <th className="ou-th" style={{textAlign:'center'}}>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {window.ALL_STUDENTS.length > 0 ? window.ALL_STUDENTS.map(s => (
+                                        <tr key={s.id} className="ou-tr" style={{background: selected.includes(s.username)?'rgba(228,96,51,0.05)':'transparent'}}>
+                                            <td className="ou-td">
+                                                <input type="checkbox"
+                                                    checked={selected.includes(s.username)}
+                                                    onChange={()=>toggleOne(s.username)}
+                                                    style={{cursor:'pointer',accentColor:'#e46033'}} />
+                                            </td>
+                                            <td className="ou-td">
+                                                <a href={`/student-search/?roll=${encodeURIComponent(s.username)}`}
+                                                   style={{color:'#e46033',textDecoration:'none',fontWeight:'700',fontFamily:'monospace',fontSize:'13px',display:'inline-flex',alignItems:'center',gap:'5px'}}
+                                                   onMouseEnter={e=>e.currentTarget.style.textDecoration='underline'}
+                                                   onMouseLeave={e=>e.currentTarget.style.textDecoration='none'}>
+                                                    {s.username}
+                                                    <i className='bx bx-link-external' style={{fontSize:'12px',opacity:0.6}}></i>
+                                                </a>
+                                                {s.is_manual && (
+                                                    <span style={{marginLeft:'6px',fontSize:'10px',background:'rgba(59,130,246,0.15)',color:'#60a5fa',padding:'2px 6px',borderRadius:'4px'}}>Manual</span>
+                                                )}
+                                            </td>
+                                            <td className="ou-td" style={{color:'#94a3b8',fontSize:'13px'}}>{s.email||<span style={{color:'#475569'}}>—</span>}</td>
+                                            <td className="ou-td" style={{color:'#cbd5e1',fontSize:'13px',fontWeight:'500'}}>{s.counselor_name||<span style={{color:'#475569',fontStyle:'italic'}}>Unassigned</span>}</td>
+                                            <td className="ou-td">
+                                                <span className="ou-badge" style={{background:roleColor(s.role_label)+'22',color:roleColor(s.role_label),border:`1px solid ${roleColor(s.role_label)}44`}}>
+                                                    {s.role_label}
+                                                </span>
+                                            </td>
+                                            <td className="ou-td" style={{textAlign:'center'}}>
+                                                {s.username !== window.CUR_USER && (
+                                                    <form method="POST" action={`/delete-student/${s.id}/`}
+                                                        onSubmit={e=>{ if(!confirm(`Delete account ${s.username}?`)) e.preventDefault(); }}
+                                                        style={{margin:0,display:'inline'}}>
+                                                        <input type="hidden" name="csrfmiddlewaretoken" value={window.CSRF_TOKEN} />
+                                                        <button type="submit" className="ou-btn ou-btn-danger" style={{padding:'5px 12px',fontSize:'11px'}}>
+                                                            <i className='bx bx-trash'></i> Remove
+                                                        </button>
+                                                    </form>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan="6" style={{padding:'50px',textAlign:'center',color:'#475569'}}>
+                                                <i className='bx bx-user-x' style={{fontSize:'40px',display:'block',marginBottom:'10px',color:'#334155'}}></i>
+                                                No accounts found matching your filters.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </main>
+
+                {/* Range select modal */}
+                {showRangeModal && (
+                    <Modal title="Select by Roll Range" icon="bx-selection" onClose={()=>setShowRangeModal(false)}>
+                        <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+                            <div>
+                                <label className="lbl">Start Roll Number</label>
+                                <input className="ou-input" type="text" placeholder="e.g. 22KB1A4201" value={rangeStart} onChange={e=>setRangeStart(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="lbl">End Roll Number</label>
+                                <input className="ou-input" type="text" placeholder="e.g. 22KB1A4260" value={rangeEnd} onChange={e=>setRangeEnd(e.target.value)} />
+                            </div>
+                            <div style={{display:'flex',gap:'10px',marginTop:'6px'}}>
+                                <button className="ou-btn ou-btn-primary" onClick={selectRange} style={{flex:1}}>
+                                    <i className='bx bx-check'></i> Select Range
+                                </button>
+                                <button className="ou-btn ou-btn-secondary" onClick={()=>setShowRangeModal(false)}>Cancel</button>
+                            </div>
+                        </div>
+                    </Modal>
+                )}
+            </div>
+        );
+    };
+
+    window.addEventListener('load', () => {
+        ReactDOM.createRoot(document.getElementById('root')).render(<UsersPage />);
+    });
+</script>
+{% endverbatim %}
 </body>
-
 </html>
