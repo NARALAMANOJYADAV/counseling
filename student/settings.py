@@ -108,15 +108,19 @@ WSGI_APPLICATION = 'student.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-if os.environ.get('DATABASE_URL'):
-    # PostgreSQL for Production (Render)
+if os.environ.get('DATABASE_URL') or os.environ.get('DB_EXTERNAL_URL'):
+    # PostgreSQL for Production (Render/Railway)
+    db_url = os.environ.get('DB_EXTERNAL_URL') or os.environ.get('DATABASE_URL')
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
+            default=db_url,
             conn_max_age=600,
             ssl_require=True
         )
     }
+    # Explicitly force SSL mode for Render
+    DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
+
 else:
     # SQLite for Local Development
     DATABASES = {
