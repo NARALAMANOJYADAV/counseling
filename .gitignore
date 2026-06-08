@@ -9,5 +9,8 @@ venv/
 node_modules/
 git_install/
 push_git.js
-push_git.js
 git_check.txt
+push_output.txt
+push_error.txt
+git_portable.exe
+push_git.js
