@@ -190,6 +190,9 @@ STATICFILES_DIRS = [
 
 # Enable WhiteNoise to serve static files on Render
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
