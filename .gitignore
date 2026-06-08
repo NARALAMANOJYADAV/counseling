@@ -6,3 +6,8 @@ staticfiles/
 media/
 .env
 venv/
+node_modules/
+git_install/
+push_git.js
+push_git.js
+git_check.txt
